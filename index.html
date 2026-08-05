@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kapon | Zıplama Macerası</title>
+    <title>Kapon | Süper Platformer</title>
     <style>
         body {
             background-color: #000;
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Press Start 2P', 'Segoe UI', monospace, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -17,468 +17,374 @@
             margin: 0;
             padding: 10px;
             box-sizing: border-box;
-            overflow: hidden;
             user-select: none;
-            touch-action: manipulation;
+            touch-action: none;
         }
 
         h1 {
             color: #ff003c;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(255, 0, 60, 0.6);
-            margin: 5px 0 15px 0;
-            font-size: 2em;
-        }
-
-        #game-info {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 400px;
-            margin-bottom: 10px;
-        }
-
-        .info-box {
-            background: #111;
-            padding: 8px 15px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            text-align: center;
-            font-weight: bold;
-            flex: 1;
-            margin: 0 5px;
-        }
-
-        .info-box span {
-            color: #ff003c;
-            font-size: 1.4em;
-            display: block;
-            margin-top: 2px;
+            letter-spacing: 2px;
+            margin: 5px 0 10px 0;
+            font-size: 1.5em;
         }
 
         #game-container {
             position: relative;
             background: #0a0a0c;
-            padding: 10px;
-            border-radius: 12px;
-            border: 2px solid #1a1a1e;
-            box-shadow: 0 0 30px rgba(255, 0, 60, 0.15);
+            padding: 4px;
+            border-radius: 8px;
+            border: 2px solid #333;
         }
 
         canvas {
-            /* Canvas'ın arkası siyah, içini JavaScript ile mavi boyayacağız */
-            background-color: #000;
-            border: 2px solid #333;
-            border-radius: 8px;
+            background-color: #5c94fc; /* Tam görseldeki Mario mavisi */
             display: block;
+            border-radius: 4px;
+            image-rendering: pixelated; /* Retro piksel görünümü */
         }
 
+        /* MOBİL KONTROLLER (Arcade Tarzı) */
         #mobile-controls {
-            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
             width: 100%;
-            max-width: 400px;
+            max-width: 600px;
+            margin-top: 20px;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
 
-        .btn-jump {
-            width: 100%;
-            background: transparent;
-            border: 3px solid #ff003c;
-            color: #ff003c;
+        .d-pad {
+            display: flex;
+            gap: 15px;
+        }
+
+        .m-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff;
+            color: #fff;
             font-size: 24px;
-            padding: 20px 0;
-            border-radius: 12px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
             font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: 0.1s;
-        }
-
-        .btn-jump:active {
-            background: #ff003c;
-            color: #000;
-            transform: scale(0.95);
-            box-shadow: 0 0 20px #ff003c;
-        }
-
-        #game-over-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            flex-direction: column;
+            display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
-            text-align: center;
-        }
-
-        #go-title {
-            font-size: 3em;
-            margin: 0 0 10px 0;
-            text-shadow: 0 0 20px #ff003c;
-            color: #ff003c;
-        }
-
-        .go-text {
-            font-size: 1.5em;
-            color: #fff;
-            margin: 10px 0;
-        }
-
-        #btn-restart {
-            margin-top: 25px;
-            padding: 15px 40px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #ff003c;
-            background: transparent;
-            border: 3px solid #ff003c;
-            border-radius: 12px;
             cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.2s;
+            user-select: none;
+            touch-action: manipulation;
         }
 
-        #btn-restart:hover, #btn-restart:active {
-            background: #ff003c;
+        .m-btn:active {
+            background: #fff;
             color: #000;
-            box-shadow: 0 0 25px #ff003c;
+            transform: scale(0.9);
+        }
+
+        .btn-action {
+            background: rgba(255, 0, 60, 0.2);
+            border-color: #ff003c;
+            color: #ff003c;
+            width: 70px;
+            height: 70px;
+        }
+
+        .btn-action:active {
+            background: #ff003c;
+            color: #fff;
+        }
+
+        /* BİLGİ EKRANI */
+        #ui-layer {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
         }
 
         @media (max-width: 768px) {
             canvas {
                 width: 100%;
                 height: auto;
-                max-width: 320px;
             }
         }
     </style>
 </head>
 <body>
 
-    <h1>ZIPLAMA MACERASI</h1>
-
-    <div id="game-info">
-        <div class="info-box">Rekor <span id="high-score">0</span></div>
-        <div class="info-box">Skor <span id="score">0</span></div>
-    </div>
+    <h1>SÜPER KAPON</h1>
 
     <div id="game-container">
-        <canvas id="gameCanvas" width="600" height="300"></canvas>
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <div id="ui-layer">
+            <div>SKOR<br><span id="score">000000</span></div>
+            <div>DÜNYA<br>1-1</div>
+        </div>
     </div>
 
+    <!-- MOBİL İÇİN KONTROL BUTONLARI -->
     <div id="mobile-controls">
-        <button class="btn-jump" id="btn-jump">ZIIPLA! ⬆️</button>
-    </div>
-
-    <div id="game-over-screen">
-        <h2 id="go-title">YANDIN!</h2>
-        <p class="go-text">Skorun: <span id="final-score" style="color: #00f3ff; font-weight:bold;">0</span></p>
-        <button id="btn-restart">TEKRAR DENE</button>
+        <div class="d-pad">
+            <div class="m-btn" id="btn-left">◀</div>
+            <div class="m-btn" id="btn-right">▶</div>
+        </div>
+        <div class="m-btn btn-action" id="btn-jump">B</div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const gameOverScreen = document.getElementById('game-over-screen');
         
-        let frames = 0;
+        // --- KLAVYE/BUTON DURUMLARI ---
+        const keys = { right: false, left: false, up: false };
+
+        // Klavye dinleyicileri
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false;
+        });
+
+        // Mobil Buton Dinleyicileri
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const btnJump = document.getElementById('btn-jump');
+
+        btnLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.left = true; });
+        btnLeft.addEventListener('pointerup', (e) => { e.preventDefault(); keys.left = false; });
+        btnLeft.addEventListener('pointercancel', (e) => { e.preventDefault(); keys.left = false; });
+
+        btnRight.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.right = true; });
+        btnRight.addEventListener('pointerup', (e) => { e.preventDefault(); keys.right = false; });
+        btnRight.addEventListener('pointercancel', (e) => { e.preventDefault(); keys.right = false; });
+
+        btnJump.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.up = true; });
+        btnJump.addEventListener('pointerup', (e) => { e.preventDefault(); keys.up = false; });
+        btnJump.addEventListener('pointercancel', (e) => { e.preventDefault(); keys.up = false; });
+
+        // --- OYUN DEĞİŞKENLERİ ---
         let score = 0;
-        let gameSpeed = 5;
-        let isGameOver = false;
-        let reqId;
-        
-        // Rekor Sistemi
-        let highScore = localStorage.getItem('marioHighScore') || 0;
-        document.getElementById('high-score').innerText = highScore;
+        let cameraX = 0;
 
-        // --- BULUTLAR (GÖKYÜZÜ İÇİN) ---
-        const clouds = [];
-        class Cloud {
-            constructor() {
-                this.x = canvas.width + Math.random() * 50;
-                this.y = Math.random() * 100 + 20;
-                this.size = Math.random() * 20 + 15;
-                this.speed = Math.random() * 1 + 0.5;
-            }
-            draw() {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.arc(this.x + this.size * 0.8, this.y - this.size * 0.4, this.size * 0.8, 0, Math.PI * 2);
-                ctx.arc(this.x + this.size * 1.6, this.y, this.size * 0.9, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            update() {
-                this.x -= this.speed;
-                this.draw();
-            }
-        }
-
-        // --- KARAKTER (KODLA ÇİZİLMİŞ PİKSEL MARIO) ---
+        // --- OYUNCU (PLAYER) ---
         const player = {
             x: 50,
-            y: 200,
-            width: 28,  // Karakter genişliği
-            height: 38, // Karakter yüksekliği
-            dy: 0,
-            jumpForce: 12.5,
-            gravity: 0.65,
+            y: 50,
+            width: 24,
+            height: 32,
+            vx: 0,
+            vy: 0,
+            speed: 4,
+            jumpPower: -11.5,
+            gravity: 0.6,
             grounded: false,
-            
-            draw() {
-                const px = this.x;
-                const py = this.y;
-                
-                // Şapka (Kırmızı)
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(px + 4, py, 16, 6); // Üst kısım
-                ctx.fillRect(px + 2, py + 6, 24, 4); // Siperlik
-                
-                // Yüz (Ten Rengi)
-                ctx.fillStyle = '#ffcc99';
-                ctx.fillRect(px + 6, py + 10, 18, 12);
-                
-                // Bıyık ve Burun
-                ctx.fillStyle = '#3a200d'; // Koyu Kahverengi
-                ctx.fillRect(px + 20, py + 14, 6, 6); // Burun
-                ctx.fillRect(px + 18, py + 18, 10, 4); // Bıyık
-                ctx.fillRect(px + 4, py + 10, 4, 8); // Favoriler / Saç
-                
-                // Göz
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(px + 16, py + 12, 4, 4);
-                
-                // Vücut - Kırmızı Gömlek
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(px + 4, py + 22, 20, 10);
-                
-                // Vücut - Mavi Tulum
-                ctx.fillStyle = '#0000ff';
-                ctx.fillRect(px + 6, py + 26, 16, 12);
-                ctx.fillRect(px + 6, py + 22, 4, 4); // Sol Askı
-                ctx.fillRect(px + 18, py + 22, 4, 4); // Sağ Askı
-                
-                // Düğmeler (Sarı)
-                ctx.fillStyle = '#ffff00';
-                ctx.fillRect(px + 6, py + 26, 3, 3);
-                ctx.fillRect(px + 18, py + 26, 3, 3);
-                
-                // Ayakkabılar (Kahverengi) - Zıplarken bacaklar yukarı çekilir!
-                ctx.fillStyle = '#5c3a21';
-                if(this.grounded) {
-                    ctx.fillRect(px + 2, py + 34, 10, 6); // Sol ayak yerde
-                    ctx.fillRect(px + 16, py + 34, 10, 6); // Sağ ayak yerde
-                } else {
-                    ctx.fillRect(px + 2, py + 30, 10, 6); // Sol ayak havada
-                    ctx.fillRect(px + 16, py + 30, 10, 6); // Sağ ayak havada
-                }
-            },
-            
+
             update() {
-                // Yerçekimi
-                this.dy += this.gravity;
-                this.y += this.dy;
-                
-                // Zemin kontrolü (Zemin 50px)
-                if (this.y + this.height >= canvas.height - 50) {
-                    this.y = canvas.height - 50 - this.height;
-                    this.dy = 0;
-                    this.grounded = true;
-                } else {
+                // Sağa Sola Hareket
+                if (keys.right) this.vx = this.speed;
+                else if (keys.left) this.vx = -this.speed;
+                else this.vx = 0; // Kayma yok, anında durur
+
+                // Zıplama
+                if (keys.up && this.grounded) {
+                    this.vy = this.jumpPower;
                     this.grounded = false;
                 }
-                this.draw();
-            },
-            
-            jump() {
-                if (this.grounded) {
-                    this.dy = -this.jumpForce;
+
+                // Yerçekimi
+                this.vy += this.gravity;
+
+                // X Ekseni Hareketi ve Çarpışması
+                this.x += this.vx;
+                this.checkCollisions('x');
+
+                // Ekranın en solundan dışarı çıkmayı engelle
+                if(this.x < 0) this.x = 0; 
+
+                // Y Ekseni Hareketi ve Çarpışması
+                this.y += this.vy;
+                this.grounded = false; // Varsayılan olarak havada kabul et
+                this.checkCollisions('y');
+
+                // Ölüm kontrolü (Boşluğa düşerse)
+                if (this.y > canvas.height + 100) {
+                    restartGame();
                 }
+            },
+
+            checkCollisions(axis) {
+                for (let i = 0; i < platforms.length; i++) {
+                    let p = platforms[i];
+                    // Basit AABB (Kutu) Çarpışma Tespiti
+                    if (this.x < p.x + p.width &&
+                        this.x + this.width > p.x &&
+                        this.y < p.y + p.height &&
+                        this.y + this.height > p.y) {
+                        
+                        // Hangi eksende çarpıştığını bul ve düzelt
+                        if (axis === 'x') {
+                            if (this.vx > 0) this.x = p.x - this.width; // Sağa çarpma
+                            else if (this.vx < 0) this.x = p.x + p.width; // Sola çarpma
+                            this.vx = 0;
+                        } else if (axis === 'y') {
+                            if (this.vy > 0) { 
+                                // Yere basma
+                                this.y = p.y - this.height;
+                                this.grounded = true;
+                            } else if (this.vy < 0) {
+                                // Kafayı bloğa vurma (Blok kırma efekti eklenebilir)
+                                this.y = p.y + p.height;
+                                if(p.type === 'qblock' && !p.hit) {
+                                    p.hit = true;
+                                    score += 100;
+                                    updateScore();
+                                }
+                            }
+                            this.vy = 0;
+                        }
+                    }
+                }
+            },
+
+            draw() {
+                // Görseldeki gibi piksel karakter (basitleştirilmiş)
+                ctx.fillStyle = '#f83800'; // Kırmızı gömlek
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                ctx.fillStyle = '#ffcc99'; // Yüz
+                ctx.fillRect(this.x + (this.vx < 0 ? 0 : 8), this.y + 4, 16, 12);
+                
+                ctx.fillStyle = '#0000ff'; // Mavi Tulum
+                ctx.fillRect(this.x + 4, this.y + 16, 16, 12);
             }
         };
 
-        // --- ENGELLER (BORULAR) ---
-        const obstacles = [];
-        class Obstacle {
-            constructor() {
-                this.width = 40;
-                this.height = Math.random() * (120 - 50) + 50; 
-                this.x = canvas.width;
-                this.y = canvas.height - 50 - this.height;
-            }
+        // --- PLATFORMLAR VE HARİTA TASARIMI ---
+        const platforms = [];
+        
+        function createLevel() {
+            platforms.length = 0;
+            // 1. Zemin Parçası
+            platforms.push({ x: 0, y: 350, width: 900, height: 50, type: 'ground' });
+            // 2. Boru
+            platforms.push({ x: 300, y: 280, width: 50, height: 70, type: 'pipe' });
+            // 3. Çukurdan sonraki zemin
+            platforms.push({ x: 1000, y: 350, width: 800, height: 50, type: 'ground' });
             
-            draw() {
-                // Klasik Mario yeşil borusu
-                ctx.fillStyle = '#00aa00';
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                // Borunun gölgelendirmesi/ışığı (3D efekti)
-                ctx.fillStyle = '#00ff00';
-                ctx.fillRect(this.x + 5, this.y, 10, this.height);
-                
-                // Borunun üst dudak kısmı
-                ctx.fillStyle = '#00aa00';
-                ctx.fillRect(this.x - 4, this.y, this.width + 8, 20);
-                ctx.fillStyle = '#00ff00';
-                ctx.fillRect(this.x + 1, this.y, 10, 20);
-                
-                // Siyah ana hatlar (Çizgi roman tarzı belirginlik)
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(this.x, this.y + 20, this.width, this.height - 20);
-                ctx.strokeRect(this.x - 4, this.y, this.width + 8, 20);
-            }
-            
-            update() {
-                this.x -= gameSpeed;
-                this.draw();
-            }
+            // Havada asılı bloklar (Attığın görseldeki dizilim)
+            platforms.push({ x: 450, y: 200, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: 482, y: 200, width: 32, height: 32, type: 'qblock', hit: false });
+            platforms.push({ x: 514, y: 200, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: 546, y: 200, width: 32, height: 32, type: 'qblock', hit: false });
+            platforms.push({ x: 578, y: 200, width: 32, height: 32, type: 'brick' });
         }
 
-        function handleObstacles() {
-            if (frames % 100 === 0) {
-                obstacles.push(new Obstacle());
-            }
-            
-            for (let i = 0; i < obstacles.length; i++) {
-                obstacles[i].update();
-                
-                // Çarpışma Kontrolü (Hassaslaştırıldı)
-                if (
-                    player.x + 4 < obstacles[i].x + obstacles[i].width &&
-                    player.x + player.width - 4 > obstacles[i].x &&
-                    player.y + 4 < obstacles[i].y + obstacles[i].height &&
-                    player.y + player.height > obstacles[i].y
-                ) {
-                    isGameOver = true;
+        // Platformları Çizme Fonksiyonu
+        function drawPlatforms() {
+            platforms.forEach(p => {
+                if (p.type === 'ground') {
+                    ctx.fillStyle = '#c84c0c'; // Tuğla turuncusu
+                    ctx.fillRect(p.x, p.y, p.width, p.height);
+                    // Basit tuğla çizgileri
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(p.x, p.y, p.width, 2); 
+                } 
+                else if (p.type === 'pipe') {
+                    ctx.fillStyle = '#00a800'; // Boru yeşili
+                    ctx.fillRect(p.x, p.y, p.width, p.height);
+                    ctx.fillStyle = '#000';
+                    ctx.strokeRect(p.x, p.y, p.width, p.height);
+                    // Boru başlığı
+                    ctx.fillRect(p.x - 4, p.y, p.width + 8, 24);
+                    ctx.strokeRect(p.x - 4, p.y, p.width + 8, 24);
                 }
-                
-                // Boru geçildiğinde skor ver
-                if (obstacles[i].x + obstacles[i].width < 0) {
-                    obstacles.splice(i, 1);
-                    score += 10;
-                    document.getElementById('score').innerText = score;
-                    i--;
-                    
-                    if(score % 50 === 0) {
-                        gameSpeed += 0.5;
+                else if (p.type === 'brick') {
+                    ctx.fillStyle = '#c84c0c';
+                    ctx.fillRect(p.x, p.y, p.width, p.height);
+                    ctx.strokeStyle = '#000';
+                    ctx.strokeRect(p.x, p.y, p.width, p.height);
+                }
+                else if (p.type === 'qblock') {
+                    ctx.fillStyle = p.hit ? '#c84c0c' : '#fc9838'; // Vurulduysa söner
+                    ctx.fillRect(p.x, p.y, p.width, p.height);
+                    ctx.strokeStyle = '#000';
+                    ctx.strokeRect(p.x, p.y, p.width, p.height);
+                    if(!p.hit) {
+                        ctx.fillStyle = '#000';
+                        ctx.font = '20px monospace';
+                        ctx.fillText('?', p.x + 10, p.y + 24);
                     }
                 }
-            }
+            });
         }
 
-        function handleClouds() {
-            if (frames % 150 === 0) {
-                clouds.push(new Cloud());
-            }
-            for (let i = 0; i < clouds.length; i++) {
-                clouds[i].update();
-                if (clouds[i].x + clouds[i].size * 3 < 0) {
-                    clouds.splice(i, 1);
-                    i--;
-                }
-            }
+        // --- BULUTLAR ---
+        function drawDecorations() {
+            ctx.fillStyle = '#fff';
+            // Bulut 1
+            ctx.fillRect(150, 80, 60, 20);
+            ctx.fillRect(160, 60, 40, 20);
+            // Bulut 2
+            ctx.fillRect(500, 50, 80, 25);
+            ctx.fillRect(520, 30, 40, 20);
         }
 
-        // --- GÖKYÜZÜ VE ZEMİN ---
-        function drawBackground() {
-            // Gökyüzü Gradyanı
-            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, '#5db1ff'); // Üstte koyu mavi
-            grad.addColorStop(1, '#a1d6ff'); // Altta açık mavi
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // --- OYUN DÖNGÜSÜ (GAME LOOP) ---
+        function updateScore() {
+            document.getElementById('score').innerText = String(score).padStart(6, '0');
         }
 
-        function drawGround() {
-            // Toprak Zemin
-            ctx.fillStyle = '#8b4513';
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-            
-            // Üstteki Çim Katmanı
-            ctx.fillStyle = '#228b22';
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 15);
-            
-            // Çim ve toprak arasına ince siyah bir çizgi
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, canvas.height - 35, canvas.width, 2);
+        function restartGame() {
+            player.x = 50;
+            player.y = 50;
+            player.vx = 0;
+            player.vy = 0;
+            score = 0;
+            updateScore();
+            createLevel();
         }
 
         function animate() {
-            if (isGameOver) {
-                gameOver();
-                return;
-            }
-            
+            // Arka planı temizle (Gökyüzü rengi CSS'ten geliyor ama canvas temizlenmeli)
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            drawBackground();
-            handleClouds();
-            drawGround();
+
+            // KAMERA TAKİBİ (Karakter sağa gittikçe ekranı kaydır)
+            // Karakter ekranın ortasını geçerse kamera onu takip eder
+            let targetCamX = player.x - canvas.width / 2 + player.width / 2;
+            if (targetCamX < 0) targetCamX = 0; // En sola gitmeyi engelle
+            cameraX = targetCamX;
+
+            ctx.save();
+            ctx.translate(-cameraX, 0); // Dünyayı kameraya göre kaydır
+
+            drawDecorations();
+            drawPlatforms();
             
             player.update();
-            handleObstacles();
-            
-            frames++;
-            reqId = requestAnimationFrame(animate);
+            player.draw();
+
+            ctx.restore();
+
+            requestAnimationFrame(animate);
         }
-
-        function gameOver() {
-            document.getElementById('final-score').innerText = score;
-            
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('marioHighScore', highScore);
-                document.getElementById('high-score').innerText = highScore;
-                document.getElementById('go-title').innerText = "YENİ REKOR!";
-                document.getElementById('go-title').style.color = "#00ff66";
-            } else {
-                document.getElementById('go-title').innerText = "YANDIN!";
-                document.getElementById('go-title').style.color = "#ff003c";
-            }
-            
-            gameOverScreen.style.display = 'flex';
-        }
-
-        function resetGame() {
-            player.y = 200;
-            player.dy = 0;
-            obstacles.length = 0;
-            clouds.length = 0; // Bulutları sıfırla
-            score = 0;
-            frames = 0;
-            gameSpeed = 5;
-            isGameOver = false;
-            document.getElementById('score').innerText = score;
-            gameOverScreen.style.display = 'none';
-            animate();
-        }
-
-        // Kontroller
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                player.jump();
-            }
-        });
-
-        const jumpBtn = document.getElementById('btn-jump');
-        jumpBtn.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            player.jump();
-        });
-        
-        canvas.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            player.jump();
-        });
-
-        document.getElementById('btn-restart').addEventListener('click', resetGame);
 
         // Oyunu Başlat
+        createLevel();
         animate();
+
     </script>
 </body>
 </html>
