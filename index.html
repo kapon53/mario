@@ -51,19 +51,26 @@
             background: #ff003c; color: #fff; border: 2px solid #fff; border-radius: 8px; cursor: pointer; text-transform: uppercase;
         }
 
-        /* SORU EKRANI */
+        /* YAZILI SORU (QUIZ) EKRANI */
         #quiz-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(43, 0, 82, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center;
             z-index: 2000; text-align: center; border-radius: 8px; padding: 20px; box-sizing: border-box;
         }
         #quiz-question { font-size: 1.1em; color: #fff; margin-bottom: 25px; line-height: 1.5; text-shadow: 0 0 10px #b026ff; }
-        #quiz-options { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 400px; }
-        .quiz-opt-btn {
-            background: #111; color: #b026ff; border: 2px solid #b026ff; padding: 15px; font-size: 0.95em;
-            border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit; line-height: 1.3;
+        
+        #quiz-input {
+            width: 80%; max-width: 300px; padding: 12px; font-size: 16px; font-weight: bold;
+            border: 2px solid #b026ff; border-radius: 8px; background: #111; color: #fff;
+            text-align: center; outline: none; margin-bottom: 20px;
         }
-        .quiz-opt-btn:active { background: #b026ff; color: #fff; transform: scale(0.95); }
+        #quiz-input:focus { box-shadow: 0 0 15px #b026ff; }
+
+        #quiz-submit {
+            background: #b026ff; color: #fff; border: 2px solid #fff; padding: 12px 30px; font-size: 1em;
+            border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+        }
+        #quiz-submit:active { transform: scale(0.95); }
 
         @media (max-width: 768px) { canvas { width: 100%; height: auto; } }
     </style>
@@ -86,7 +93,8 @@
 
         <div id="quiz-screen">
             <div id="quiz-question">Soru</div>
-            <div id="quiz-options"></div>
+            <input type="text" id="quiz-input" placeholder="Cevabı yaz..." autocomplete="off">
+            <button id="quiz-submit">CEVAPLA</button>
         </div>
     </div>
 
@@ -103,8 +111,13 @@
         const ctx = canvas.getContext('2d');
         const gameOverScreen = document.getElementById('game-over-screen');
         const quizScreen = document.getElementById('quiz-screen');
+        const quizInput = document.getElementById('quiz-input');
         
         const keys = { right: false, left: false, up: false };
+
+        function resetKeys() {
+            keys.right = false; keys.left = false; keys.up = false;
+        }
 
         window.addEventListener('keydown', (e) => {
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
@@ -138,101 +151,159 @@
         let reqId;
 
         // ==========================================
-        // İREM VE KEREM'İN ÖZEL SORU HAVUZU (13 SORU)
+        // YAZILI SORU SİSTEMİ (ŞIKLAR YERİNE KABUL EDİLEN KELİMELER)
+        // Kız arkadaşın (İrem) "Ben" yazarsa sistem İrem'i kastettiğini anlar.
         // ==========================================
         const questionsData = [
             {
                 q: "Sana resmi olarak ilk aşkım dediğim tarih?",
-                options: ["14 Şubat", "13 Mart", "1 Nisan"],
-                correct: 1, 
-                failMsg: "İnanmıyorum... İlk aşkım dediğim günü nasıl unutursun! 💔 Başa dön!"
+                answers: ["13 mart", "13.03"],
+                failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔 Başa dön!"
             },
             {
                 q: "Tartıştığımızda genellikle kim haklı olur? 🙄",
-                options: ["Ben (Kerem)", "Sen (İrem) 💅", "İkimiz de"],
-                correct: 1,
-                failMsg: "Yanlış cevap! İkimiz de biliyoruz ki daima sen haklısın! 😂 Başa dön!"
+                answers: ["irem", "ben"],
+                failMsg: "Daima sen haklısın, bunu bilmen lazımdı! 😂 Başa dön!"
             },
             {
                 q: "Kim daha düşürücü? 🫠",
-                options: ["Ben (Kerem) 😎", "Sen (İrem)", "Ortak"],
-                correct: 0,
-                failMsg: "Emin misin? Bence bir daha düşün... 😉 Başa dön!"
+                answers: ["kerem", "sen"],
+                failMsg: "Bence bunu bir daha düşün... 😉 Başa dön!"
             },
             {
                 q: "Kim daha uykucu?",
-                options: ["Ben (Kerem)", "Sen (İrem) 😴", "Uyku da neymiş?"],
-                correct: 1,
-                failMsg: "Hadi ama, uykucu şirin kim biliyoruz... 😴 Başa dön!"
+                answers: ["irem", "ben"],
+                failMsg: "Uykucu şirin kim biliyoruz... 😴 Başa dön!"
             },
             {
-                q: "Kim daha çok seven kişinin PLANLARINI BOZUYOR????????? 🤔🧐",
-                options: ["Ben (Kerem)", "Sen (İrem) 🫣", "Kader diyelim"],
-                correct: 1,
+                q: "Kim daha çok seven kişinin PLANLARINI BOZUYOR????????? 🤔",
+                answers: ["irem", "ben"],
                 failMsg: "İtiraf etsene planları kim bozuyor! 🧐 Başa dön!"
             },
             {
                 q: "Sana aşkım deyip korktuğum tarih?",
-                options: ["13 Mart", "1 Nisan", "14 Şubat"],
-                correct: 2,
+                answers: ["1 nisan", "01.04"],
                 failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱 Başa dön!"
             },
             {
                 q: "Göndermelerin olduğu tartışma tarihi?",
-                options: ["- (Böyle bir tarih yok)", "10 Mayıs", "30 Şubat"],
-                correct: 0,
+                answers: ["yok", "-", "hiç", "böyle bir tarih yok", "hatırlamıyorum"],
                 failMsg: "O kadar gönderme boşa mı gitti yani? 🙄 Tekrar başla!"
             },
             {
                 q: "WP'ye geçtiğimiz tarih?",
-                options: ["1 Nisan", "14 Şubat", "13 Mart"],
-                correct: 0,
+                answers: ["14 şubat", "14.02", "sevgililer günü"],
                 failMsg: "O tarihi bileceksin... O kadar heyecanlanmıştık! 😤 Başa dön."
             },
             {
-                q: "Kim numaralaşmak istedi? 🙄🫣 (DÜNYANIN EN UTANÇ ANI)",
-                options: ["Sen (İrem)", "Ben (Kerem) 🫣", "Telepati ile numaralaştık"],
-                correct: 1,
+                q: "Kim numaralaşmak istedi? 🙄 (DÜNYANIN EN UTANÇ ANI)",
+                answers: ["irem", "ben"],
                 failMsg: "O utanç anını başkasına yıkamazsın! 🫣 Başa dön!"
             },
             {
                 q: "Benim çok sevip (fav değil) senin HİÇ sevmediğin yemek?",
-                options: ["Kuru Fasulye", "Nohut", "Ispanak"],
-                correct: 1,
+                answers: ["nohut"],
                 failMsg: "Nasıl sevmezsin nohutu ya... Bilemedin, başa dön! 😡"
             },
             {
                 q: "Senin bayıla bayıla yediğin, benim nefret ettiğim o 'Gıda Katliamı' yemek? 🤢🤮",
-                options: ["Bol Soslu Döner", "Islak Hamburger", "Ananaslı Pizza"],
-                correct: 0,
+                answers: ["döner", "soslu", "soslu döner", "bol soslu döner"],
                 failMsg: "O soslu döneri midesi alan tek kişi sensin... Nasıl unutursun! 🤮 Başa dön!"
             },
             {
                 q: "Kurgu yaptığımızda çıktığımız date'de sen hangi tatlıyı yedin?",
-                options: ["Sütlaç", "Kazandibi", "Fıstık Sarma"],
-                correct: 2,
-                failMsg: "Yediğin fıstık sarmayı bile unuttun mu? İnanılmaz... 🍰 Başa dön!"
+                answers: ["fıstık", "sarma", "fıstık sarma"],
+                failMsg: "Yediğin tatlıyı bile unuttun mu? İnanılmaz... 🍰 Başa dön!"
             },
             {
-                q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡😡",
-                options: ["Fatih", "Ahmet", "Mehmet"],
-                correct: 0,
-                failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡😡😡 Başa dön!"
+                q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡",
+                answers: ["fatih"],
+                failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡 Başa dön!"
             }
         ];
         let currentQuizBlock = null;
 
-        // --- OYUNCU (KARAKTER FİZİĞİ VE ÇİZİMİ) ---
+        // ==========================================
+        // GERÇEK 8-BİT MARİO ÇİZİMİ (Piksel Piksel)
+        // ==========================================
+        function drawMario(x, y, isJumping, direction) {
+            const R = '#f83800'; // Kırmızı Şapka/Gömlek
+            const B = '#0058f8'; // Mavi Tulum
+            const S = '#f8b800'; // Ten Rengi
+            const H = '#5c3800'; // Saç/Bıyık/Ayakkabı
+            const Y = '#ffff00'; // Düğmeler
+            const _ = null;      // Boşluk
+
+            let pixels;
+            if (!isJumping) {
+                pixels = [
+                    [_,_,_,R,R,R,R,R,R,_,_,_],
+                    [_,_,R,R,R,R,R,R,R,R,R,_],
+                    [_,_,H,H,H,S,S,H,S,_,_,_],
+                    [_,H,S,H,S,S,S,H,S,S,S,_],
+                    [_,H,S,H,H,S,S,S,H,S,S,S],
+                    [_,H,H,S,S,S,S,H,H,H,H,_],
+                    [_,_,_,S,S,S,S,S,S,S,_,_],
+                    [_,_,R,R,B,R,R,R,_,_,_,_],
+                    [_,R,R,R,B,R,R,B,R,R,R,_],
+                    [R,R,R,R,B,B,B,B,R,R,R,R],
+                    [S,S,R,B,Y,B,B,Y,B,R,S,S],
+                    [S,S,S,B,B,B,B,B,B,S,S,S],
+                    [S,S,B,B,B,B,B,B,B,B,S,S],
+                    [_,_,B,B,B,_,_,B,B,B,_,_],
+                    [_,H,H,H,_,_,_,_,H,H,H,_],
+                    [H,H,H,H,_,_,_,_,H,H,H,H]
+                ];
+            } else {
+                pixels = [
+                    [_,_,_,R,R,R,R,R,R,_,_,_],
+                    [_,_,R,R,R,R,R,R,R,R,R,_],
+                    [_,_,H,H,H,S,S,H,S,_,_,_],
+                    [_,H,S,H,S,S,S,H,S,S,S,_],
+                    [_,H,S,H,H,S,S,S,H,S,S,S],
+                    [_,H,H,S,S,S,S,H,H,H,H,_],
+                    [_,_,_,S,S,S,S,S,S,S,_,_],
+                    [_,_,_,R,R,R,B,R,R,_,_,_],
+                    [_,_,R,R,R,R,B,R,R,R,_,_],
+                    [_,R,R,R,R,B,B,B,B,R,R,_],
+                    [_,S,S,R,B,Y,B,B,Y,B,R,_],
+                    [_,S,S,S,B,B,B,B,B,B,S,_],
+                    [_,_,S,B,B,B,B,B,B,B,B,_],
+                    [_,_,B,B,B,B,_,B,B,B,B,_],
+                    [_,H,H,H,_,_,_,_,H,H,H,_],
+                    [H,H,H,H,_,_,_,_,H,H,H,H]
+                ];
+            }
+
+            const pixelSize = 2; // Çözünürlük (Karakteri büyütür)
+            ctx.save();
+            ctx.translate(x, y);
+            if(direction < 0) { // Sola dönükse aynala
+                ctx.scale(-1, 1);
+                ctx.translate(-24, 0); // Genişlik düzeltmesi (12 * 2 = 24)
+            }
+
+            for (let row = 0; row < pixels.length; row++) {
+                for (let col = 0; col < pixels[row].length; col++) {
+                    if (pixels[row][col] !== null) {
+                        ctx.fillStyle = pixels[row][col];
+                        ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
         const player = {
             x: 50, y: 50, width: 24, height: 32,
-            vx: 0, vy: 0, speed: 4.5, jumpPower: -12, gravity: 0.65,
-            grounded: false, isDead: false,
+            vx: 0, vy: 0, speed: 4.5, jumpPower: -12.5, gravity: 0.65,
+            grounded: false, isDead: false, facingRight: true,
 
             update() {
                 if(this.isDead || isPaused) return;
 
-                if (keys.right) this.vx = this.speed;
-                else if (keys.left) this.vx = -this.speed;
+                if (keys.right) { this.vx = this.speed; this.facingRight = true; }
+                else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
                 else this.vx = 0; 
 
                 if (keys.up && this.grounded) {
@@ -267,7 +338,6 @@
                     }
                 }
 
-                // 13 soruyu bitirip sona ulaşma
                 if (this.x >= 12500) winGame(); 
                 if (this.y > canvas.height + 100) die("ÇUKURA DÜŞTÜN! 😱 Başa dön...");
             },
@@ -300,24 +370,21 @@
 
             draw() {
                 if(this.isDead) return;
-                ctx.fillStyle = '#f83800'; 
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.fillStyle = '#ffcc99'; 
-                ctx.fillRect(this.x + (this.vx < 0 ? 0 : 8), this.y + 4, 16, 12);
-                ctx.fillStyle = '#0000ff'; 
-                ctx.fillRect(this.x + 4, this.y + 16, 16, 12);
+                let dir = this.facingRight ? 1 : -1;
+                drawMario(this.x, this.y, !this.grounded, dir);
             }
         };
 
         const platforms = [];
         const enemies = [];
         
-        // --- HARİTA VE RASTGELE SORU DAĞILIMI ---
+        // ==========================================
+        // PARKUR TASARIMI (Çukurlar daraldı, platformlar eklendi)
+        // ==========================================
         function createLevel() {
             platforms.length = 0;
             enemies.length = 0;
 
-            // Soruların indekslerini karıştır (Random Shuffle Algoritması)
             let shuffledQuestionIndices = [];
             for (let i = 0; i < questionsData.length; i++) {
                 shuffledQuestionIndices.push(i);
@@ -330,24 +397,29 @@
             let currentX = 0;
             
             for(let i = 0; i < 13; i++) {
-                // Zemin
-                platforms.push({ x: currentX, y: 350, width: 700, height: 50, type: 'ground' });
+                // Ana Zemin (Daha kısa, parkur araları 100px uçurum)
+                platforms.push({ x: currentX, y: 350, width: 400, height: 50, type: 'ground' });
                 
-                // Karıştırılmış listeden rastgele soruyu bloğa ata
-                platforms.push({ x: currentX + 350, y: 200, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
+                // Ufak bir parkur zıplama platformu (Çukurun ortasında veya sonunda)
+                platforms.push({ x: currentX + 430, y: 300, width: 64, height: 20, type: 'ground' }); 
                 
-                // Süs Tuğlalar
-                platforms.push({ x: currentX + 318, y: 200, width: 32, height: 32, type: 'brick' });
-                platforms.push({ x: currentX + 382, y: 200, width: 32, height: 32, type: 'brick' });
+                // Soru Bloğu ve Süslemeler (Merdivenimsi)
+                platforms.push({ x: currentX + 550, y: 350, width: 350, height: 50, type: 'ground' });
+                platforms.push({ x: currentX + 650, y: 200, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
+                
+                platforms.push({ x: currentX + 618, y: 200, width: 32, height: 32, type: 'brick' });
+                platforms.push({ x: currentX + 682, y: 200, width: 32, height: 32, type: 'brick' });
 
-                // Düşman (Goomba)
-                enemies.push({ x: currentX + 500, y: 326, width: 24, height: 24, minX: currentX + 400, maxX: currentX + 650, vx: -1.5, alive: true });
+                // Düşman (Zeminde devriye geziyor)
+                enemies.push({ x: currentX + 750, y: 326, width: 24, height: 24, minX: currentX + 600, maxX: currentX + 850, vx: -1.5, alive: true });
                 
-                // Bir sonraki adaya geçiş (200px uçurum boşluğu)
-                currentX += 900; 
+                // Boru Engeli
+                platforms.push({ x: currentX + 850, y: 280, width: 40, height: 70, type: 'pipe' });
+
+                currentX += 950; // Sonraki aşamaya geçiş
             }
 
-            // Bitiş Zemini
+            // Bitiş Bayrağı Zemini
             platforms.push({ x: currentX, y: 350, width: 1000, height: 50, type: 'ground' });
         }
 
@@ -361,44 +433,53 @@
             });
         }
 
+        // --- SORU ÇAĞIRMA (YAZILI GİRİŞ) ---
         function triggerQuiz(blockInfo) {
+            resetKeys(); 
             isPaused = true; 
             currentQuizBlock = blockInfo; 
             
             const quizData = questionsData[blockInfo.qIndex];
-            // Soru numarasını (1), 2) vs) temizleyip dinamik numara eklemek istersen burada yapabiliriz ama böyle saf da çok güzel durur.
             document.getElementById('quiz-question').innerText = quizData.q;
-            
-            const optionsContainer = document.getElementById('quiz-options');
-            optionsContainer.innerHTML = ''; 
-            
-            quizData.options.forEach((optText, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'quiz-opt-btn';
-                btn.innerText = optText;
-                btn.onclick = () => checkAnswer(index, quizData.correct, quizData.failMsg);
-                optionsContainer.appendChild(btn);
-            });
+            quizInput.value = ''; // Kutuyu temizle
             
             quizScreen.style.display = 'flex'; 
+            quizInput.focus(); // Telefondaysa klavyeyi açmaya çalış
         }
 
-        function checkAnswer(selectedIndex, correctIndex, failMessage) {
-            quizScreen.style.display = 'none'; 
+        // --- YAZILAN CEVABI KONTROL ETME ---
+        document.getElementById('quiz-submit').addEventListener('click', checkTypedAnswer);
+        quizInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkTypedAnswer();
+            }
+        });
+
+        function checkTypedAnswer() {
+            const userAnswer = quizInput.value.toLowerCase().trim();
+            const quizData = questionsData[currentQuizBlock.qIndex];
             
-            if (selectedIndex === correctIndex) {
+            // Eğer kabul edilen cevaplardan biri yazının içinde geçiyorsa doğru say (Örn: "nohut" yazdı, kabul. "nohut yemeği" yazdı, yine kabul)
+            let isCorrect = quizData.answers.some(ans => userAnswer.includes(ans) || ans.includes(userAnswer) && userAnswer.length > 2);
+            
+            // Özel kontrol (Gönderme tarihi yok/hiç sorusu için boşluk bırakıp entera basarsa kabul etmeyelim)
+            if(userAnswer.length < 1) return; // Boş geçilemez
+
+            quizScreen.style.display = 'none'; 
+            resetKeys();
+            
+            if (isCorrect) {
                 currentQuizBlock.hit = true; 
                 score += 500; 
                 updateScore();
                 isPaused = false; 
             } else {
                 isPaused = false;
-                die(failMessage); 
+                die(quizData.failMsg); 
             }
         }
 
         function drawGame() {
-            // Arka Plan Süsleri
             ctx.fillStyle = '#fff';
             for(let i=0; i<30; i++) {
                 ctx.fillRect(150 + i*500, 80, 60, 20);
@@ -407,14 +488,13 @@
                 ctx.fillRect(370 + i*500, 30, 40, 20);
             }
 
-            // Bitiş Bayrağı
             ctx.fillStyle = '#fff';
-            ctx.fillRect(12500, 50, 4, 300); 
+            ctx.fillRect(12450, 50, 4, 300); 
             ctx.fillStyle = '#00a800';
-            ctx.fillRect(12494, 42, 16, 16); 
+            ctx.fillRect(12444, 42, 16, 16); 
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.moveTo(12504, 60); ctx.lineTo(12540, 75); ctx.lineTo(12504, 90); ctx.fill(); 
+            ctx.moveTo(12454, 60); ctx.lineTo(12490, 75); ctx.lineTo(12454, 90); ctx.fill(); 
             
             platforms.forEach(p => {
                 if (p.type === 'ground') {
@@ -424,6 +504,11 @@
                 else if (p.type === 'brick') {
                     ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
                     ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+                }
+                else if (p.type === 'pipe') {
+                    ctx.fillStyle = '#00a800'; ctx.fillRect(p.x, p.y, p.width, p.height);
+                    ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+                    ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
                 }
                 else if (p.type === 'quizblock') {
                     ctx.fillStyle = p.hit ? '#c84c0c' : '#b026ff';
@@ -452,6 +537,7 @@
 
         function die(reason) {
             if(player.isDead) return;
+            resetKeys();
             player.isDead = true;
             document.getElementById('go-title').innerText = reason; 
             document.getElementById('go-title').style.color = "#ff003c";
@@ -461,6 +547,7 @@
 
         function winGame() {
             if(player.isDead) return;
+            resetKeys();
             player.isDead = true; 
             document.getElementById('go-title').innerText = "VEEE FİNAL! 💖\nTÜM SORULARI GEÇTİN!";
             document.getElementById('go-title').style.color = "#00ff66";
@@ -469,6 +556,7 @@
         }
 
         function restartGame() {
+            resetKeys();
             player.x = 50; player.y = 50; player.vx = 0; player.vy = 0;
             player.isDead = false;
             isPaused = false;
@@ -480,7 +568,7 @@
 
         document.getElementById('btn-restart').addEventListener('click', () => {
             if(document.getElementById('btn-restart').innerText === "SENİ ÇOK SEVİYORUM!") {
-                // Kazandıktan sonra butona basarsa hiçbir şey yapma (ekranda kalsın)
+                // Oyun bitti, bir şey yapma
             } else {
                 restartGame();
             }
