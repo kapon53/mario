@@ -51,7 +51,7 @@
             background: #ff003c; color: #fff; border: 2px solid #fff; border-radius: 8px; cursor: pointer; text-transform: uppercase;
         }
 
-        /* YAZILI SORU (QUIZ) EKRANI */
+        /* YAZILI SORU EKRANI */
         #quiz-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(43, 0, 82, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -150,10 +150,6 @@
         let isPaused = false;
         let reqId;
 
-        // ==========================================
-        // YAZILI SORU SİSTEMİ (ŞIKLAR YERİNE KABUL EDİLEN KELİMELER)
-        // Kız arkadaşın (İrem) "Ben" yazarsa sistem İrem'i kastettiğini anlar.
-        // ==========================================
         const questionsData = [
             {
                 q: "Sana resmi olarak ilk aşkım dediğim tarih?",
@@ -182,7 +178,7 @@
             },
             {
                 q: "Sana aşkım deyip korktuğum tarih?",
-                answers: ["1 nisan", "01.04"],
+                answers: ["14 şubat", "14.02", "sevgililer günü"],
                 failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱 Başa dön!"
             },
             {
@@ -192,12 +188,12 @@
             },
             {
                 q: "WP'ye geçtiğimiz tarih?",
-                answers: ["14 şubat", "14.02", "sevgililer günü"],
+                answers: ["1 nisan", "01.04"],
                 failMsg: "O tarihi bileceksin... O kadar heyecanlanmıştık! 😤 Başa dön."
             },
             {
                 q: "Kim numaralaşmak istedi? 🙄 (DÜNYANIN EN UTANÇ ANI)",
-                answers: ["irem", "ben"],
+                answers: ["kerem", "sen"],
                 failMsg: "O utanç anını başkasına yıkamazsın! 🫣 Başa dön!"
             },
             {
@@ -223,16 +219,13 @@
         ];
         let currentQuizBlock = null;
 
-        // ==========================================
-        // GERÇEK 8-BİT MARİO ÇİZİMİ (Piksel Piksel)
-        // ==========================================
         function drawMario(x, y, isJumping, direction) {
-            const R = '#f83800'; // Kırmızı Şapka/Gömlek
-            const B = '#0058f8'; // Mavi Tulum
-            const S = '#f8b800'; // Ten Rengi
-            const H = '#5c3800'; // Saç/Bıyık/Ayakkabı
-            const Y = '#ffff00'; // Düğmeler
-            const _ = null;      // Boşluk
+            const R = '#f83800'; 
+            const B = '#0058f8'; 
+            const S = '#f8b800'; 
+            const H = '#5c3800'; 
+            const Y = '#ffff00'; 
+            const _ = null;      
 
             let pixels;
             if (!isJumping) {
@@ -275,12 +268,12 @@
                 ];
             }
 
-            const pixelSize = 2; // Çözünürlük (Karakteri büyütür)
+            const pixelSize = 2;
             ctx.save();
             ctx.translate(x, y);
-            if(direction < 0) { // Sola dönükse aynala
+            if(direction < 0) { 
                 ctx.scale(-1, 1);
-                ctx.translate(-24, 0); // Genişlik düzeltmesi (12 * 2 = 24)
+                ctx.translate(-24, 0); 
             }
 
             for (let row = 0; row < pixels.length; row++) {
@@ -320,7 +313,6 @@
                 this.grounded = false; 
                 this.checkCollisions('y');
 
-                // Düşman Çarpışması
                 for (let i = 0; i < enemies.length; i++) {
                     let e = enemies[i];
                     if (e.alive && 
@@ -338,7 +330,7 @@
                     }
                 }
 
-                if (this.x >= 12500) winGame(); 
+                if (this.x >= 12700) winGame(); 
                 if (this.y > canvas.height + 100) die("ÇUKURA DÜŞTÜN! 😱 Başa dön...");
             },
 
@@ -378,9 +370,6 @@
         const platforms = [];
         const enemies = [];
         
-        // ==========================================
-        // PARKUR TASARIMI (Çukurlar daraldı, platformlar eklendi)
-        // ==========================================
         function createLevel() {
             platforms.length = 0;
             enemies.length = 0;
@@ -397,26 +386,61 @@
             let currentX = 0;
             
             for(let i = 0; i < 13; i++) {
-                // Ana Zemin (Daha kısa, parkur araları 100px uçurum)
-                platforms.push({ x: currentX, y: 350, width: 400, height: 50, type: 'ground' });
-                
-                // Ufak bir parkur zıplama platformu (Çukurun ortasında veya sonunda)
-                platforms.push({ x: currentX + 430, y: 300, width: 64, height: 20, type: 'ground' }); 
-                
-                // Soru Bloğu ve Süslemeler (Merdivenimsi)
-                platforms.push({ x: currentX + 550, y: 350, width: 350, height: 50, type: 'ground' });
-                platforms.push({ x: currentX + 650, y: 200, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
-                
-                platforms.push({ x: currentX + 618, y: 200, width: 32, height: 32, type: 'brick' });
-                platforms.push({ x: currentX + 682, y: 200, width: 32, height: 32, type: 'brick' });
+                let type = i % 4; // 4 Farklı Parkur Döngüsü
 
-                // Düşman (Zeminde devriye geziyor)
-                enemies.push({ x: currentX + 750, y: 326, width: 24, height: 24, minX: currentX + 600, maxX: currentX + 850, vx: -1.5, alive: true });
-                
-                // Boru Engeli
-                platforms.push({ x: currentX + 850, y: 280, width: 40, height: 70, type: 'pipe' });
+                if(type === 0) {
+                    // 1. KLASİK UÇURUM
+                    platforms.push({ x: currentX, y: 350, width: 350, height: 50, type: 'ground' });
+                    platforms.push({ x: currentX + 420, y: 300, width: 64, height: 20, type: 'ground' }); 
+                    platforms.push({ x: currentX + 540, y: 350, width: 460, height: 50, type: 'ground' });
+                    
+                    platforms.push({ x: currentX + 650, y: 200, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
+                    platforms.push({ x: currentX + 618, y: 200, width: 32, height: 32, type: 'brick' });
+                    platforms.push({ x: currentX + 682, y: 200, width: 32, height: 32, type: 'brick' });
+                    
+                    enemies.push({ x: currentX + 750, y: 326, width: 24, height: 24, minX: currentX + 600, maxX: currentX + 900, vx: -1.5, alive: true });
+                } 
+                else if(type === 1) {
+                    // 2. BORU İSTİLASI
+                    platforms.push({ x: currentX, y: 350, width: 1000, height: 50, type: 'ground' });
+                    
+                    platforms.push({ x: currentX + 300, y: 290, width: 40, height: 60, type: 'pipe' });
+                    enemies.push({ x: currentX + 400, y: 326, width: 24, height: 24, minX: currentX + 350, maxX: currentX + 450, vx: -1, alive: true });
+                    
+                    platforms.push({ x: currentX + 500, y: 260, width: 40, height: 90, type: 'pipe' });
+                    
+                    platforms.push({ x: currentX + 700, y: 200, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
+                    
+                    enemies.push({ x: currentX + 800, y: 326, width: 24, height: 24, minX: currentX + 600, maxX: currentX + 950, vx: -2, alive: true });
+                }
+                else if(type === 2) {
+                    // 3. MERDİVENLER
+                    platforms.push({ x: currentX, y: 350, width: 1000, height: 50, type: 'ground' });
+                    
+                    platforms.push({ x: currentX + 250, y: 318, width: 32, height: 32, type: 'brick' });
+                    platforms.push({ x: currentX + 282, y: 286, width: 32, height: 64, type: 'brick' });
+                    platforms.push({ x: currentX + 314, y: 254, width: 32, height: 96, type: 'brick' });
+                    
+                    platforms.push({ x: currentX + 500, y: 150, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
+                    platforms.push({ x: currentX + 500, y: 250, width: 32, height: 32, type: 'brick' }); // Alt basamak
 
-                currentX += 950; // Sonraki aşamaya geçiş
+                    enemies.push({ x: currentX + 700, y: 326, width: 24, height: 24, minX: currentX + 400, maxX: currentX + 900, vx: -1.5, alive: true });
+                }
+                else if(type === 3) {
+                    // 4. YÜKSEK UÇAN ADALAR
+                    platforms.push({ x: currentX, y: 350, width: 250, height: 50, type: 'ground' });
+                    
+                    platforms.push({ x: currentX + 350, y: 250, width: 64, height: 20, type: 'ground' }); 
+                    platforms.push({ x: currentX + 500, y: 180, width: 64, height: 20, type: 'ground' }); 
+                    
+                    platforms.push({ x: currentX + 516, y: 80, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
+                    
+                    platforms.push({ x: currentX + 650, y: 350, width: 350, height: 50, type: 'ground' });
+                    
+                    platforms.push({ x: currentX + 850, y: 300, width: 40, height: 50, type: 'pipe' });
+                }
+                
+                currentX += 1000; 
             }
 
             // Bitiş Bayrağı Zemini
@@ -433,7 +457,6 @@
             });
         }
 
-        // --- SORU ÇAĞIRMA (YAZILI GİRİŞ) ---
         function triggerQuiz(blockInfo) {
             resetKeys(); 
             isPaused = true; 
@@ -441,29 +464,24 @@
             
             const quizData = questionsData[blockInfo.qIndex];
             document.getElementById('quiz-question').innerText = quizData.q;
-            quizInput.value = ''; // Kutuyu temizle
+            quizInput.value = ''; 
             
             quizScreen.style.display = 'flex'; 
-            quizInput.focus(); // Telefondaysa klavyeyi açmaya çalış
+            quizInput.focus(); 
         }
 
-        // --- YAZILAN CEVABI KONTROL ETME ---
         document.getElementById('quiz-submit').addEventListener('click', checkTypedAnswer);
         quizInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkTypedAnswer();
-            }
+            if (e.key === 'Enter') checkTypedAnswer();
         });
 
         function checkTypedAnswer() {
             const userAnswer = quizInput.value.toLowerCase().trim();
             const quizData = questionsData[currentQuizBlock.qIndex];
             
-            // Eğer kabul edilen cevaplardan biri yazının içinde geçiyorsa doğru say (Örn: "nohut" yazdı, kabul. "nohut yemeği" yazdı, yine kabul)
             let isCorrect = quizData.answers.some(ans => userAnswer.includes(ans) || ans.includes(userAnswer) && userAnswer.length > 2);
             
-            // Özel kontrol (Gönderme tarihi yok/hiç sorusu için boşluk bırakıp entera basarsa kabul etmeyelim)
-            if(userAnswer.length < 1) return; // Boş geçilemez
+            if(userAnswer.length < 1) return; 
 
             quizScreen.style.display = 'none'; 
             resetKeys();
@@ -488,13 +506,14 @@
                 ctx.fillRect(370 + i*500, 30, 40, 20);
             }
 
+            // Bitiş Bayrağı
             ctx.fillStyle = '#fff';
-            ctx.fillRect(12450, 50, 4, 300); 
+            ctx.fillRect(13000, 50, 4, 300); 
             ctx.fillStyle = '#00a800';
-            ctx.fillRect(12444, 42, 16, 16); 
+            ctx.fillRect(12994, 42, 16, 16); 
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.moveTo(12454, 60); ctx.lineTo(12490, 75); ctx.lineTo(12454, 90); ctx.fill(); 
+            ctx.moveTo(13004, 60); ctx.lineTo(13040, 75); ctx.lineTo(13004, 90); ctx.fill(); 
             
             platforms.forEach(p => {
                 if (p.type === 'ground') {
@@ -579,7 +598,7 @@
 
             let targetCamX = player.x - canvas.width / 2 + player.width / 2;
             if (targetCamX < 0) targetCamX = 0;
-            if (targetCamX > 12200) targetCamX = 12200; 
+            if (targetCamX > 12700) targetCamX = 12700; 
             cameraX = targetCamX;
 
             ctx.save();
