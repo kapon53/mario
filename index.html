@@ -38,13 +38,13 @@
         }
 
         canvas {
-            background-color: #5c94fc; /* Tam görseldeki Mario mavisi */
+            background-color: #5c94fc;
             display: block;
             border-radius: 4px;
-            image-rendering: pixelated; /* Retro piksel görünümü */
+            image-rendering: pixelated;
         }
 
-        /* MOBİL KONTROLLER (Arcade Tarzı) */
+        /* MOBİL KONTROLLER */
         #mobile-controls {
             display: flex;
             justify-content: space-between;
@@ -96,7 +96,6 @@
             color: #fff;
         }
 
-        /* BİLGİ EKRANI */
         #ui-layer {
             position: absolute;
             top: 15px;
@@ -110,11 +109,46 @@
             pointer-events: none;
         }
 
+        /* OYUN BİTİŞ EKRANI */
+        #game-over-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        #go-title {
+            font-size: 2.5em;
+            margin: 0 0 10px 0;
+        }
+
+        .go-text {
+            font-size: 1.2em;
+            color: #fff;
+            margin: 10px 0;
+        }
+
+        #btn-restart {
+            margin-top: 20px;
+            padding: 10px 25px;
+            font-size: 1em;
+            font-weight: bold;
+            background: #ff003c;
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
         @media (max-width: 768px) {
-            canvas {
-                width: 100%;
-                height: auto;
-            }
+            canvas { width: 100%; height: auto; }
         }
     </style>
 </head>
@@ -128,9 +162,14 @@
             <div>SKOR<br><span id="score">000000</span></div>
             <div>DÜNYA<br>1-1</div>
         </div>
+        
+        <div id="game-over-screen">
+            <h2 id="go-title" style="color: #ff003c;">YANDIN!</h2>
+            <p class="go-text">Skor: <span id="final-score" style="color: #fff;">0</span></p>
+            <button id="btn-restart">TEKRAR DENE</button>
+        </div>
     </div>
 
-    <!-- MOBİL İÇİN KONTROL BUTONLARI -->
     <div id="mobile-controls">
         <div class="d-pad">
             <div class="m-btn" id="btn-left">◀</div>
@@ -142,11 +181,10 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const gameOverScreen = document.getElementById('game-over-screen');
         
-        // --- KLAVYE/BUTON DURUMLARI ---
         const keys = { right: false, left: false, up: false };
 
-        // Klavye dinleyicileri
         window.addEventListener('keydown', (e) => {
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
@@ -158,7 +196,6 @@
             if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false;
         });
 
-        // Mobil Buton Dinleyicileri
         const btnLeft = document.getElementById('btn-left');
         const btnRight = document.getElementById('btn-right');
         const btnJump = document.getElementById('btn-jump');
@@ -175,77 +212,81 @@
         btnJump.addEventListener('pointerup', (e) => { e.preventDefault(); keys.up = false; });
         btnJump.addEventListener('pointercancel', (e) => { e.preventDefault(); keys.up = false; });
 
-        // --- OYUN DEĞİŞKENLERİ ---
         let score = 0;
         let cameraX = 0;
+        let isGameOver = false;
+        let reqId;
 
-        // --- OYUNCU (PLAYER) ---
+        // --- OYUNCU ---
         const player = {
-            x: 50,
-            y: 50,
-            width: 24,
-            height: 32,
-            vx: 0,
-            vy: 0,
-            speed: 4,
-            jumpPower: -11.5,
-            gravity: 0.6,
-            grounded: false,
+            x: 50, y: 50, width: 24, height: 32,
+            vx: 0, vy: 0, speed: 4.5, jumpPower: -12, gravity: 0.65,
+            grounded: false, isDead: false,
 
             update() {
-                // Sağa Sola Hareket
+                if(this.isDead) return;
+
                 if (keys.right) this.vx = this.speed;
                 else if (keys.left) this.vx = -this.speed;
-                else this.vx = 0; // Kayma yok, anında durur
+                else this.vx = 0; 
 
-                // Zıplama
                 if (keys.up && this.grounded) {
                     this.vy = this.jumpPower;
                     this.grounded = false;
                 }
 
-                // Yerçekimi
                 this.vy += this.gravity;
-
-                // X Ekseni Hareketi ve Çarpışması
                 this.x += this.vx;
+                if(this.x < 0) this.x = 0; // Geri gitme sınırı
                 this.checkCollisions('x');
 
-                // Ekranın en solundan dışarı çıkmayı engelle
-                if(this.x < 0) this.x = 0; 
-
-                // Y Ekseni Hareketi ve Çarpışması
                 this.y += this.vy;
-                this.grounded = false; // Varsayılan olarak havada kabul et
+                this.grounded = false; 
                 this.checkCollisions('y');
 
-                // Ölüm kontrolü (Boşluğa düşerse)
-                if (this.y > canvas.height + 100) {
-                    restartGame();
+                // Düşman Çarpışması
+                for (let i = 0; i < enemies.length; i++) {
+                    let e = enemies[i];
+                    if (e.alive && 
+                        this.x < e.x + e.width && this.x + this.width > e.x &&
+                        this.y < e.y + e.height && this.y + this.height > e.y) {
+                        
+                        // Kafasına basma kontrolü (Oyuncu düşüyorsa ve düşmanın üst kısmındaysa)
+                        if (this.vy > 0 && this.y + this.height - this.vy <= e.y + 10) {
+                            e.alive = false;
+                            this.vy = -7; // Zıplat
+                            score += 100;
+                            updateScore();
+                        } else {
+                            die(); // Yandan çarptı
+                        }
+                    }
                 }
+
+                // Bölüm Sonu Bayrağı Kontrolü
+                if (this.x >= 4700) {
+                    winGame();
+                }
+
+                // Çukura Düşme
+                if (this.y > canvas.height + 100) die();
             },
 
             checkCollisions(axis) {
                 for (let i = 0; i < platforms.length; i++) {
                     let p = platforms[i];
-                    // Basit AABB (Kutu) Çarpışma Tespiti
-                    if (this.x < p.x + p.width &&
-                        this.x + this.width > p.x &&
-                        this.y < p.y + p.height &&
-                        this.y + this.height > p.y) {
+                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                        this.y < p.y + p.height && this.y + this.height > p.y) {
                         
-                        // Hangi eksende çarpıştığını bul ve düzelt
                         if (axis === 'x') {
-                            if (this.vx > 0) this.x = p.x - this.width; // Sağa çarpma
-                            else if (this.vx < 0) this.x = p.x + p.width; // Sola çarpma
+                            if (this.vx > 0) this.x = p.x - this.width;
+                            else if (this.vx < 0) this.x = p.x + p.width;
                             this.vx = 0;
                         } else if (axis === 'y') {
                             if (this.vy > 0) { 
-                                // Yere basma
                                 this.y = p.y - this.height;
                                 this.grounded = true;
                             } else if (this.vy < 0) {
-                                // Kafayı bloğa vurma (Blok kırma efekti eklenebilir)
                                 this.y = p.y + p.height;
                                 if(p.type === 'qblock' && !p.hit) {
                                     p.hit = true;
@@ -260,54 +301,101 @@
             },
 
             draw() {
-                // Görseldeki gibi piksel karakter (basitleştirilmiş)
-                ctx.fillStyle = '#f83800'; // Kırmızı gömlek
+                if(this.isDead) return;
+                ctx.fillStyle = '#f83800'; 
                 ctx.fillRect(this.x, this.y, this.width, this.height);
-                
-                ctx.fillStyle = '#ffcc99'; // Yüz
+                ctx.fillStyle = '#ffcc99'; 
                 ctx.fillRect(this.x + (this.vx < 0 ? 0 : 8), this.y + 4, 16, 12);
-                
-                ctx.fillStyle = '#0000ff'; // Mavi Tulum
+                ctx.fillStyle = '#0000ff'; 
                 ctx.fillRect(this.x + 4, this.y + 16, 16, 12);
             }
         };
 
-        // --- PLATFORMLAR VE HARİTA TASARIMI ---
         const platforms = [];
+        const enemies = [];
         
         function createLevel() {
             platforms.length = 0;
-            // 1. Zemin Parçası
-            platforms.push({ x: 0, y: 350, width: 900, height: 50, type: 'ground' });
-            // 2. Boru
-            platforms.push({ x: 300, y: 280, width: 50, height: 70, type: 'pipe' });
-            // 3. Çukurdan sonraki zemin
-            platforms.push({ x: 1000, y: 350, width: 800, height: 50, type: 'ground' });
+            enemies.length = 0;
+
+            // ZEMİNLER VE ÇUKURLAR
+            platforms.push({ x: 0, y: 350, width: 900, height: 50, type: 'ground' }); // Zemin 1
+            platforms.push({ x: 1050, y: 350, width: 1200, height: 50, type: 'ground' }); // Zemin 2
+            platforms.push({ x: 2400, y: 350, width: 600, height: 50, type: 'ground' }); // Zemin 3
+            platforms.push({ x: 3150, y: 350, width: 2000, height: 50, type: 'ground' }); // Bitiş Zemini
+
+            // BORULAR
+            platforms.push({ x: 400, y: 290, width: 50, height: 60, type: 'pipe' });
+            platforms.push({ x: 600, y: 260, width: 50, height: 90, type: 'pipe' });
+            platforms.push({ x: 1200, y: 280, width: 50, height: 70, type: 'pipe' });
+            platforms.push({ x: 2600, y: 240, width: 50, height: 110, type: 'pipe' });
+
+            // BLOKLAR
+            platforms.push({ x: 200, y: 200, width: 32, height: 32, type: 'qblock', hit: false });
+            platforms.push({ x: 750, y: 200, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: 782, y: 200, width: 32, height: 32, type: 'qblock', hit: false });
+            platforms.push({ x: 814, y: 200, width: 32, height: 32, type: 'brick' });
+
+            // MERDİVENLER
+            platforms.push({ x: 1600, y: 318, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: 1632, y: 286, width: 32, height: 64, type: 'brick' });
+            platforms.push({ x: 1664, y: 254, width: 32, height: 96, type: 'brick' });
             
-            // Havada asılı bloklar (Attığın görseldeki dizilim)
-            platforms.push({ x: 450, y: 200, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: 482, y: 200, width: 32, height: 32, type: 'qblock', hit: false });
-            platforms.push({ x: 514, y: 200, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: 546, y: 200, width: 32, height: 32, type: 'qblock', hit: false });
-            platforms.push({ x: 578, y: 200, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: 1800, y: 254, width: 32, height: 96, type: 'brick' });
+            platforms.push({ x: 1832, y: 286, width: 32, height: 64, type: 'brick' });
+            platforms.push({ x: 1864, y: 318, width: 32, height: 32, type: 'brick' });
+
+            // DÜŞMANLAR (Patrol aralığı ile)
+            enemies.push({ x: 700, y: 326, width: 24, height: 24, minX: 660, maxX: 880, vx: -1.5, alive: true });
+            enemies.push({ x: 1400, y: 326, width: 24, height: 24, minX: 1260, maxX: 1580, vx: -1.5, alive: true });
+            enemies.push({ x: 2000, y: 326, width: 24, height: 24, minX: 1900, maxX: 2200, vx: 2, alive: true });
+            enemies.push({ x: 3300, y: 326, width: 24, height: 24, minX: 3200, maxX: 3500, vx: -2, alive: true });
         }
 
-        // Platformları Çizme Fonksiyonu
-        function drawPlatforms() {
+        function updateEnemies() {
+            enemies.forEach(e => {
+                if (e.alive) {
+                    e.x += e.vx;
+                    if (e.x <= e.minX || e.x >= e.maxX) e.vx *= -1; // Sınırda geri dön
+                }
+            });
+        }
+
+        function drawGame() {
+            // Arka Plan Dekorları (Bulutlar vb)
+            ctx.fillStyle = '#fff';
+            for(let i=0; i<10; i++) {
+                ctx.fillRect(150 + i*500, 80, 60, 20);
+                ctx.fillRect(160 + i*500, 60, 40, 20);
+                ctx.fillRect(350 + i*500, 50, 80, 25);
+                ctx.fillRect(370 + i*500, 30, 40, 20);
+            }
+
+            // Bitiş Bayrağı (x=4700)
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(4700, 50, 4, 300); // Direk
+            ctx.fillStyle = '#00a800';
+            ctx.fillRect(4694, 42, 16, 16); // Tepe topuz
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(4704, 60);
+            ctx.lineTo(4740, 75);
+            ctx.lineTo(4704, 90);
+            ctx.fill(); // Bayrak
+            
+            // Platformlar
             platforms.forEach(p => {
                 if (p.type === 'ground') {
-                    ctx.fillStyle = '#c84c0c'; // Tuğla turuncusu
+                    ctx.fillStyle = '#c84c0c';
                     ctx.fillRect(p.x, p.y, p.width, p.height);
-                    // Basit tuğla çizgileri
                     ctx.fillStyle = '#000';
                     ctx.fillRect(p.x, p.y, p.width, 2); 
                 } 
                 else if (p.type === 'pipe') {
-                    ctx.fillStyle = '#00a800'; // Boru yeşili
+                    ctx.fillStyle = '#00a800';
                     ctx.fillRect(p.x, p.y, p.width, p.height);
                     ctx.fillStyle = '#000';
                     ctx.strokeRect(p.x, p.y, p.width, p.height);
-                    // Boru başlığı
                     ctx.fillRect(p.x - 4, p.y, p.width + 8, 24);
                     ctx.strokeRect(p.x - 4, p.y, p.width + 8, 24);
                 }
@@ -318,7 +406,7 @@
                     ctx.strokeRect(p.x, p.y, p.width, p.height);
                 }
                 else if (p.type === 'qblock') {
-                    ctx.fillStyle = p.hit ? '#c84c0c' : '#fc9838'; // Vurulduysa söner
+                    ctx.fillStyle = p.hit ? '#c84c0c' : '#fc9838';
                     ctx.fillRect(p.x, p.y, p.width, p.height);
                     ctx.strokeStyle = '#000';
                     ctx.strokeRect(p.x, p.y, p.width, p.height);
@@ -329,59 +417,82 @@
                     }
                 }
             });
+
+            // Düşmanları Çiz
+            enemies.forEach(e => {
+                if(e.alive) {
+                    ctx.fillStyle = '#8b4513'; // Kahverengi gövde
+                    ctx.fillRect(e.x, e.y, e.width, e.height);
+                    ctx.fillStyle = '#ffcc99'; // Ayaklar
+                    ctx.fillRect(e.x, e.y+20, 8, 4);
+                    ctx.fillRect(e.x+16, e.y+20, 8, 4);
+                    ctx.fillStyle = '#fff'; // Gözler
+                    ctx.fillRect(e.x+4, e.y+6, 6, 8);
+                    ctx.fillRect(e.x+14, e.y+6, 6, 8);
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(e.x+6, e.y+10, 2, 2);
+                    ctx.fillRect(e.x+16, e.y+10, 2, 2);
+                }
+            });
         }
 
-        // --- BULUTLAR ---
-        function drawDecorations() {
-            ctx.fillStyle = '#fff';
-            // Bulut 1
-            ctx.fillRect(150, 80, 60, 20);
-            ctx.fillRect(160, 60, 40, 20);
-            // Bulut 2
-            ctx.fillRect(500, 50, 80, 25);
-            ctx.fillRect(520, 30, 40, 20);
-        }
-
-        // --- OYUN DÖNGÜSÜ (GAME LOOP) ---
         function updateScore() {
             document.getElementById('score').innerText = String(score).padStart(6, '0');
         }
 
+        function die() {
+            if(player.isDead) return;
+            player.isDead = true;
+            document.getElementById('go-title').innerText = "YANDIN!";
+            document.getElementById('go-title').style.color = "#ff003c";
+            document.getElementById('final-score').innerText = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function winGame() {
+            if(player.isDead) return;
+            player.isDead = true; // Hareketi durdurmak için
+            score += 1000;
+            updateScore();
+            document.getElementById('go-title').innerText = "KAZANDIN!";
+            document.getElementById('go-title').style.color = "#00a800";
+            document.getElementById('final-score').innerText = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
         function restartGame() {
-            player.x = 50;
-            player.y = 50;
-            player.vx = 0;
-            player.vy = 0;
+            player.x = 50; player.y = 50; player.vx = 0; player.vy = 0;
+            player.isDead = false;
             score = 0;
             updateScore();
             createLevel();
+            gameOverScreen.style.display = 'none';
         }
 
+        document.getElementById('btn-restart').addEventListener('click', restartGame);
+
         function animate() {
-            // Arka planı temizle (Gökyüzü rengi CSS'ten geliyor ama canvas temizlenmeli)
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // KAMERA TAKİBİ (Karakter sağa gittikçe ekranı kaydır)
-            // Karakter ekranın ortasını geçerse kamera onu takip eder
+            // Kamera Takibi
             let targetCamX = player.x - canvas.width / 2 + player.width / 2;
-            if (targetCamX < 0) targetCamX = 0; // En sola gitmeyi engelle
+            if (targetCamX < 0) targetCamX = 0;
+            if (targetCamX > 4300) targetCamX = 4300; // Kamera bayraktan sonra gitmesin
             cameraX = targetCamX;
 
             ctx.save();
-            ctx.translate(-cameraX, 0); // Dünyayı kameraya göre kaydır
+            ctx.translate(-cameraX, 0);
 
-            drawDecorations();
-            drawPlatforms();
-            
+            drawGame();
+            updateEnemies();
             player.update();
             player.draw();
 
             ctx.restore();
 
-            requestAnimationFrame(animate);
+            if(!isGameOver) reqId = requestAnimationFrame(animate);
         }
 
-        // Oyunu Başlat
         createLevel();
         animate();
 
