@@ -1,622 +1,843 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kapon | Bizim Hikaye</title>
-    <style>
-        body {
-            background-color: #000; color: #fff;
-            font-family: 'Press Start 2P', 'Segoe UI', monospace, sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box;
-            user-select: none; touch-action: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kapon | Bizim Hikaye</title>
+<style>
+    body {
+        background-color: #000; color: #fff;
+        font-family: 'Press Start 2P', 'Segoe UI', monospace, sans-serif;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box;
+        user-select: none; touch-action: none;
+    }
+    h1 { color: #ff003c; text-transform: uppercase; letter-spacing: 2px; margin: 5px 0 10px 0; font-size: 1.5em; text-shadow: 0 0 10px rgba(255, 0, 60, 0.6); }
+    #game-container { position: relative; background: #0a0a0c; padding: 4px; border-radius: 8px; border: 2px solid #333; overflow: hidden; }
+    canvas { background-color: #5c94fc; display: block; border-radius: 4px; image-rendering: pixelated; }
 
-        h1 { color: #ff003c; text-transform: uppercase; letter-spacing: 2px; margin: 5px 0 10px 0; font-size: 1.5em; text-shadow: 0 0 10px rgba(255, 0, 60, 0.6); }
+    #mobile-controls { display: flex; justify-content: space-between; width: 100%; max-width: 600px; margin-top: 20px; padding: 0 10px; box-sizing: border-box; }
+    .d-pad { display: flex; gap: 15px; }
+    .m-btn {
+        background: rgba(255, 255, 255, 0.1); border: 2px solid #fff; color: #fff;
+        font-size: 24px; width: 60px; height: 60px; border-radius: 50%;
+        font-weight: bold; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; user-select: none; touch-action: manipulation;
+    }
+    .m-btn:active { background: #fff; color: #000; transform: scale(0.9); }
+    .btn-action { background: rgba(255, 0, 60, 0.2); border-color: #ff003c; color: #ff003c; width: 70px; height: 70px; }
+    .btn-action:active { background: #ff003c; color: #fff; }
 
-        #game-container { position: relative; background: #0a0a0c; padding: 4px; border-radius: 8px; border: 2px solid #333; overflow: hidden; }
+    #ui-layer {
+        position: absolute; top: 15px; left: 15px; right: 90px;
+        display: flex; justify-content: space-between; font-weight: bold; font-size: 13px;
+        text-shadow: 2px 2px 0 #000; pointer-events: none;
+    }
+    #ui-layer .stat { text-align: left; }
+    #ui-layer .stat.right { text-align: right; }
+    #progress-label { color: #ffd400; }
+    #hearts { color: #ff003c; font-size: 14px; letter-spacing: 2px; }
 
-        canvas { background-color: #5c94fc; display: block; border-radius: 4px; image-rendering: pixelated; }
+    #mute-btn {
+        position: absolute; top: 12px; right: 18px; pointer-events: auto; cursor: pointer;
+        background: rgba(0,0,0,0.45); border: 2px solid #fff; color: #fff; border-radius: 8px;
+        font-size: 14px; padding: 6px 10px; z-index: 600;
+    }
 
-        #mobile-controls {
-            display: flex; justify-content: space-between; width: 100%; max-width: 600px;
-            margin-top: 20px; padding: 0 10px; box-sizing: border-box;
-        }
-        .d-pad { display: flex; gap: 15px; }
-        .m-btn {
-            background: rgba(255, 255, 255, 0.1); border: 2px solid #fff; color: #fff;
-            font-size: 24px; width: 60px; height: 60px; border-radius: 50%;
-            font-weight: bold; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; user-select: none; touch-action: manipulation;
-        }
-        .m-btn:active { background: #fff; color: #000; transform: scale(0.9); }
-        .btn-action { background: rgba(255, 0, 60, 0.2); border-color: #ff003c; color: #ff003c; width: 70px; height: 70px; }
-        .btn-action:active { background: #ff003c; color: #fff; }
+    #game-over-screen, #quiz-screen, #start-screen, #life-lost-screen {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        border-radius: 8px; padding: 20px; box-sizing: border-box; text-align: center;
+    }
+    #game-over-screen { background: rgba(0, 0, 0, 0.92); z-index: 1000; white-space: pre-line; }
+    #go-title { font-size: 1.4em; margin: 0 0 15px 0; line-height: 1.4; color: #ff003c; text-shadow: 0 0 10px #ff003c; }
 
-        #ui-layer {
-            position: absolute; top: 15px; left: 15px; right: 15px;
-            display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; text-shadow: 2px 2px 0 #000; pointer-events: none;
-        }
+    #life-lost-screen { background: rgba(80, 0, 0, 0.9); z-index: 950; white-space: pre-line; }
+    #ll-title { font-size: 1.2em; margin: 0 0 10px 0; line-height: 1.4; color: #ff5c5c; }
+    #ll-sub { font-size: 0.8em; margin-bottom: 20px; color: #ffb0b0; }
 
-        /* YANDIN EKRANI */
-        #game-over-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 1000; text-align: center; border-radius: 8px; padding: 20px; box-sizing: border-box;
-        }
-        #go-title { font-size: 1.5em; margin: 0 0 15px 0; line-height: 1.4; color: #ff003c; text-shadow: 0 0 10px #ff003c; }
-        #btn-restart {
-            margin-top: 20px; padding: 12px 25px; font-size: 1em; font-weight: bold;
-            background: #ff003c; color: #fff; border: 2px solid #fff; border-radius: 8px; cursor: pointer; text-transform: uppercase;
-        }
+    button.game-btn {
+        margin-top: 10px; padding: 12px 25px; font-size: 1em; font-weight: bold;
+        background: #ff003c; color: #fff; border: 2px solid #fff; border-radius: 8px; cursor: pointer; text-transform: uppercase;
+    }
+    button.game-btn:active { transform: scale(0.95); }
 
-        /* YAZILI SORU EKRANI */
-        #quiz-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(43, 0, 82, 0.95); display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 2000; text-align: center; border-radius: 8px; padding: 20px; box-sizing: border-box;
-        }
-        #quiz-question { font-size: 1.1em; color: #fff; margin-bottom: 25px; line-height: 1.5; text-shadow: 0 0 10px #b026ff; }
-        
-        #quiz-input {
-            width: 80%; max-width: 300px; padding: 12px; font-size: 16px; font-weight: bold;
-            border: 2px solid #b026ff; border-radius: 8px; background: #111; color: #fff;
-            text-align: center; outline: none; margin-bottom: 20px;
-        }
-        #quiz-input:focus { box-shadow: 0 0 15px #b026ff; }
+    #quiz-screen { background: rgba(43, 0, 82, 0.96); z-index: 2000; }
+    #quiz-question { font-size: 1.05em; color: #fff; margin-bottom: 25px; line-height: 1.5; text-shadow: 0 0 10px #b026ff; }
+    #quiz-input {
+        width: 80%; max-width: 300px; padding: 12px; font-size: 16px; font-weight: bold;
+        border: 2px solid #b026ff; border-radius: 8px; background: #111; color: #fff;
+        text-align: center; outline: none; margin-bottom: 20px;
+    }
+    #quiz-input:focus { box-shadow: 0 0 15px #b026ff; }
+    #quiz-submit { background: #b026ff; color: #fff; border: 2px solid #fff; padding: 12px 30px; font-size: 1em; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+    #quiz-submit:active { transform: scale(0.95); }
 
-        #quiz-submit {
-            background: #b026ff; color: #fff; border: 2px solid #fff; padding: 12px 30px; font-size: 1em;
-            border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
-        }
-        #quiz-submit:active { transform: scale(0.95); }
+    #start-screen { background: linear-gradient(rgba(26,0,51,0.28), rgba(0,0,0,0.22)); z-index: 3000; display: flex; }
+    #start-title { color: #ff003c; font-size: 1.6em; text-shadow: 0 0 15px #ff003c; margin-bottom: 10px; }
+    #start-sub { color: #b026ff; font-size: 0.75em; margin-bottom: 25px; line-height: 1.6; max-width: 80%; }
+    #start-btn { background: #00c853; padding: 14px 30px; font-size: 1.1em; }
 
-        @media (max-width: 768px) { canvas { width: 100%; height: auto; } }
-    </style>
+    @media (max-width: 768px) { canvas { width: 100%; height: auto; } }
+</style>
 </head>
 <body>
 
-    <h1>BİZİM HİKAYE</h1>
+<h1>BİZİM HİKAYE</h1>
 
-    <div id="game-container">
-        <canvas id="gameCanvas" width="600" height="400"></canvas>
-        <div id="ui-layer">
-            <div>SKOR<br><span id="score">000000</span></div>
-            <div>AŞK<br>100%</div>
-        </div>
-        
-        <div id="game-over-screen">
-            <h2 id="go-title">YANDIN!</h2>
-            <button id="btn-restart">HATANI TELAFİ ET</button>
-        </div>
+<div id="game-container">
+    <canvas id="gameCanvas" width="900" height="500"></canvas>
 
-        <div id="quiz-screen">
-            <div id="quiz-question">Soru</div>
-            <input type="text" id="quiz-input" placeholder="Cevabı yaz..." autocomplete="off">
-            <button id="quiz-submit">CEVAPLA</button>
-        </div>
+    <div id="ui-layer">
+        <div class="stat">SKOR<br><span id="score">000000</span></div>
+        <div class="stat right" id="progress-label">BÖLÜM 1/20<br><span id="hearts">❤❤❤</span></div>
+    </div>
+    <div id="mute-btn">🔊</div>
+
+    <div id="start-screen">
+        <div id="start-title">BİZİM HİKAYE</div>
+        <div id="start-sub">Aramızdaki anıları hatırlayarak ilerle.<br>Mor kutulara çarpıp soruları doğru cevapla,<br>yoksa geçemezsin. 3 canın var, dikkatli ol! Coin topla, daha zor bir yolculuk seni bekliyor.</div>
+        <button class="game-btn" id="start-btn">BAŞLA ▶</button>
     </div>
 
-    <div id="mobile-controls">
-        <div class="d-pad">
-            <div class="m-btn" id="btn-left">◀</div>
-            <div class="m-btn" id="btn-right">▶</div>
-        </div>
-        <div class="m-btn btn-action" id="btn-jump">B</div>
+    <div id="life-lost-screen">
+        <h2 id="ll-title">CAN KAYBETTİN!</h2>
+        <div id="ll-sub"></div>
+        <button class="game-btn" id="btn-continue">DEVAM ET</button>
     </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const quizScreen = document.getElementById('quiz-screen');
-        const quizInput = document.getElementById('quiz-input');
-        
-        const keys = { right: false, left: false, up: false };
+    <div id="game-over-screen">
+        <h2 id="go-title">YANDIN!</h2>
+        <button class="game-btn" id="btn-restart">HATANI TELAFİ ET</button>
+    </div>
 
-        function resetKeys() {
-            keys.right = false; keys.left = false; keys.up = false;
-        }
+    <div id="quiz-screen">
+        <div id="quiz-question">Soru</div>
+        <input type="text" id="quiz-input" placeholder="Cevabı yaz..." autocomplete="off">
+        <button id="quiz-submit">CEVAPLA</button>
+    </div>
+</div>
 
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
-            if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
-            if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false;
-        });
+<div id="mobile-controls">
+    <div class="d-pad">
+        <div class="m-btn" id="btn-left">◀</div>
+        <div class="m-btn" id="btn-right">▶</div>
+    </div>
+    <div class="m-btn btn-action" id="btn-jump">B</div>
+</div>
 
-        const btnLeft = document.getElementById('btn-left');
-        const btnRight = document.getElementById('btn-right');
-        const btnJump = document.getElementById('btn-jump');
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameOverScreen = document.getElementById('game-over-screen');
+const lifeLostScreen = document.getElementById('life-lost-screen');
+const startScreen = document.getElementById('start-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const quizInput = document.getElementById('quiz-input');
+const muteBtn = document.getElementById('mute-btn');
 
-        btnLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.left = true; });
-        btnLeft.addEventListener('pointerup', (e) => { e.preventDefault(); keys.left = false; });
-        btnLeft.addEventListener('pointercancel', (e) => { e.preventDefault(); keys.left = false; });
-        btnRight.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.right = true; });
-        btnRight.addEventListener('pointerup', (e) => { e.preventDefault(); keys.right = false; });
-        btnRight.addEventListener('pointercancel', (e) => { e.preventDefault(); keys.right = false; });
-        btnJump.addEventListener('pointerdown', (e) => { e.preventDefault(); keys.up = true; });
-        btnJump.addEventListener('pointerup', (e) => { e.preventDefault(); keys.up = false; });
-        btnJump.addEventListener('pointercancel', (e) => { e.preventDefault(); keys.up = false; });
+const TOTAL_SEGMENTS = 20;
+const SEGMENT_WIDTH = 1200;
+const MAX_LIVES = 3;
 
-        let score = 0;
-        let cameraX = 0;
-        let isGameOver = false;
-        let isPaused = false;
-        let reqId;
-
-        const questionsData = [
-            {
-                q: "Sana resmi olarak ilk aşkım dediğim tarih?",
-                answers: ["13 mart", "13.03"],
-                failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔 Başa dön!"
-            },
-            {
-                q: "Tartıştığımızda genellikle kim haklı olur? 🙄",
-                answers: ["irem", "ben"],
-                failMsg: "Daima sen haklısın, bunu bilmen lazımdı! 😂 Başa dön!"
-            },
-            {
-                q: "Kim daha düşürücü? 🫠",
-                answers: ["kerem", "sen"],
-                failMsg: "Bence bunu bir daha düşün... 😉 Başa dön!"
-            },
-            {
-                q: "Kim daha uykucu?",
-                answers: ["irem", "ben"],
-                failMsg: "Uykucu şirin kim biliyoruz... 😴 Başa dön!"
-            },
-            {
-                q: "Kim daha çok seven kişinin PLANLARINI BOZUYOR????????? 🤔",
-                answers: ["irem", "ben"],
-                failMsg: "İtiraf etsene planları kim bozuyor! 🧐 Başa dön!"
-            },
-            {
-                q: "Sana aşkım deyip korktuğum tarih?",
-                answers: ["14 şubat", "14.02", "sevgililer günü"],
-                failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱 Başa dön!"
-            },
-            {
-                q: "Göndermelerin olduğu tartışma tarihi?",
-                answers: ["yok", "-", "hiç", "böyle bir tarih yok", "hatırlamıyorum"],
-                failMsg: "O kadar gönderme boşa mı gitti yani? 🙄 Tekrar başla!"
-            },
-            {
-                q: "WP'ye geçtiğimiz tarih?",
-                answers: ["1 nisan", "01.04"],
-                failMsg: "O tarihi bileceksin... O kadar heyecanlanmıştık! 😤 Başa dön."
-            },
-            {
-                q: "Kim numaralaşmak istedi? 🙄 (DÜNYANIN EN UTANÇ ANI)",
-                answers: ["kerem", "sen"],
-                failMsg: "O utanç anını başkasına yıkamazsın! 🫣 Başa dön!"
-            },
-            {
-                q: "Benim çok sevip (fav değil) senin HİÇ sevmediğin yemek?",
-                answers: ["nohut"],
-                failMsg: "Nasıl sevmezsin nohutu ya... Bilemedin, başa dön! 😡"
-            },
-            {
-                q: "Senin bayıla bayıla yediğin, benim nefret ettiğim o 'Gıda Katliamı' yemek? 🤢🤮",
-                answers: ["döner", "soslu", "soslu döner", "bol soslu döner"],
-                failMsg: "O soslu döneri midesi alan tek kişi sensin... Nasıl unutursun! 🤮 Başa dön!"
-            },
-            {
-                q: "Kurgu yaptığımızda çıktığımız date'de sen hangi tatlıyı yedin?",
-                answers: ["fıstık", "sarma", "fıstık sarma"],
-                failMsg: "Yediğin tatlıyı bile unuttun mu? İnanılmaz... 🍰 Başa dön!"
-            },
-            {
-                q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡",
-                answers: ["fatih"],
-                failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡 Başa dön!"
-            }
+/* ============== SES MOTORU (Web Audio - telifsiz, jenerik 8-bit sesler) ============== */
+const AudioEngine = {
+    ctx: null, master: null, muted: false, musicTimer: null, musicStep: 0,
+    init() {
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.22;
+        this.master.connect(this.ctx.destination);
+        // restore mute from localStorage
+        try {
+            const m = localStorage.getItem('kapon_muted');
+            if (m === '1') { this.muted = true; this.master.gain.value = 0; muteBtn.innerText = '🔇'; }
+        } catch (e) {}
+    },
+    tone(freq, dur, type = 'square', vol = 1, delay = 0) {
+        if (!this.ctx) return;
+        const t0 = this.ctx.currentTime + delay;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+        gain.gain.setValueAtTime(vol, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+        osc.connect(gain); gain.connect(this.master);
+        osc.start(t0); osc.stop(t0 + dur + 0.02);
+    },
+    jump() { this.tone(520, 0.12, 'square', 0.5); this.tone(780, 0.1, 'square', 0.3, 0.05); },
+    stomp() { this.tone(180, 0.15, 'square', 0.6); },
+    correct() { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, 0.15, 'square', 0.5, i * 0.09)); },
+    wrong() { this.tone(200, 0.3, 'sawtooth', 0.5); this.tone(150, 0.35, 'sawtooth', 0.4, 0.1); },
+    lifeLost() { this.tone(300, 0.2, 'sawtooth', 0.5); this.tone(220, 0.25, 'sawtooth', 0.5, 0.12); this.tone(140, 0.4, 'sawtooth', 0.5, 0.24); },
+    fanfare() { [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.25, 'square', 0.5, i * 0.14)); },
+    coin() { [880, 1046].forEach((f, i) => this.tone(f, 0.08, 'triangle', 0.45, i * 0.06)); },
+    startMusic() {
+        if (!this.ctx || this.musicTimer) return;
+        const melody = [
+            523, 0, 659, 0, 784, 0, 659, 0, 523, 0, 659, 0, 784, 880, 784, 0,
+            698, 0, 880, 0, 784, 0, 659, 0, 523, 0, 392, 0, 523, 0, 0, 0
         ];
-        let currentQuizBlock = null;
-
-        function drawMario(x, y, isJumping, direction) {
-            const R = '#f83800'; 
-            const B = '#0058f8'; 
-            const S = '#f8b800'; 
-            const H = '#5c3800'; 
-            const Y = '#ffff00'; 
-            const _ = null;      
-
-            let pixels;
-            if (!isJumping) {
-                pixels = [
-                    [_,_,_,R,R,R,R,R,R,_,_,_],
-                    [_,_,R,R,R,R,R,R,R,R,R,_],
-                    [_,_,H,H,H,S,S,H,S,_,_,_],
-                    [_,H,S,H,S,S,S,H,S,S,S,_],
-                    [_,H,S,H,H,S,S,S,H,S,S,S],
-                    [_,H,H,S,S,S,S,H,H,H,H,_],
-                    [_,_,_,S,S,S,S,S,S,S,_,_],
-                    [_,_,R,R,B,R,R,R,_,_,_,_],
-                    [_,R,R,R,B,R,R,B,R,R,R,_],
-                    [R,R,R,R,B,B,B,B,R,R,R,R],
-                    [S,S,R,B,Y,B,B,Y,B,R,S,S],
-                    [S,S,S,B,B,B,B,B,B,S,S,S],
-                    [S,S,B,B,B,B,B,B,B,B,S,S],
-                    [_,_,B,B,B,_,_,B,B,B,_,_],
-                    [_,H,H,H,_,_,_,_,H,H,H,_],
-                    [H,H,H,H,_,_,_,_,H,H,H,H]
-                ];
-            } else {
-                pixels = [
-                    [_,_,_,R,R,R,R,R,R,_,_,_],
-                    [_,_,R,R,R,R,R,R,R,R,R,_],
-                    [_,_,H,H,H,S,S,H,S,_,_,_],
-                    [_,H,S,H,S,S,S,H,S,S,S,_],
-                    [_,H,S,H,H,S,S,S,H,S,S,S],
-                    [_,H,H,S,S,S,S,H,H,H,H,_],
-                    [_,_,_,S,S,S,S,S,S,S,_,_],
-                    [_,_,_,R,R,R,B,R,R,_,_,_],
-                    [_,_,R,R,R,R,B,R,R,R,_,_],
-                    [_,R,R,R,R,B,B,B,B,R,R,_],
-                    [_,S,S,R,B,Y,B,B,Y,B,R,_],
-                    [_,S,S,S,B,B,B,B,B,B,S,_],
-                    [_,_,S,B,B,B,B,B,B,B,B,_],
-                    [_,_,B,B,B,B,_,B,B,B,B,_],
-                    [_,H,H,H,_,_,_,_,H,H,H,_],
-                    [H,H,H,H,_,_,_,_,H,H,H,H]
-                ];
-            }
-
-            const pixelSize = 2;
-            ctx.save();
-            ctx.translate(x, y);
-            if(direction < 0) { 
-                ctx.scale(-1, 1);
-                ctx.translate(-24, 0); 
-            }
-
-            for (let row = 0; row < pixels.length; row++) {
-                for (let col = 0; col < pixels[row].length; col++) {
-                    if (pixels[row][col] !== null) {
-                        ctx.fillStyle = pixels[row][col];
-                        ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
-                    }
-                }
-            }
-            ctx.restore();
-        }
-
-        const player = {
-            x: 50, y: 50, width: 24, height: 32,
-            vx: 0, vy: 0, speed: 4.5, jumpPower: -12.5, gravity: 0.65,
-            grounded: false, isDead: false, facingRight: true,
-
-            update() {
-                if(this.isDead || isPaused) return;
-
-                if (keys.right) { this.vx = this.speed; this.facingRight = true; }
-                else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
-                else this.vx = 0; 
-
-                if (keys.up && this.grounded) {
-                    this.vy = this.jumpPower;
-                    this.grounded = false;
-                }
-
-                this.vy += this.gravity;
-                this.x += this.vx;
-                if(this.x < 0) this.x = 0; 
-                this.checkCollisions('x');
-
-                this.y += this.vy;
-                this.grounded = false; 
-                this.checkCollisions('y');
-
-                for (let i = 0; i < enemies.length; i++) {
-                    let e = enemies[i];
-                    if (e.alive && 
-                        this.x < e.x + e.width && this.x + this.width > e.x &&
-                        this.y < e.y + e.height && this.y + this.height > e.y) {
-                        
-                        if (this.vy > 0 && this.y + this.height - this.vy <= e.y + 10) {
-                            e.alive = false;
-                            this.vy = -7; 
-                            score += 100;
-                            updateScore();
-                        } else {
-                            die("Goomba'ya çarptın! Baştan..."); 
-                        }
-                    }
-                }
-
-                if (this.x >= 12700) winGame(); 
-                if (this.y > canvas.height + 100) die("ÇUKURA DÜŞTÜN! 😱 Başa dön...");
-            },
-
-            checkCollisions(axis) {
-                for (let i = 0; i < platforms.length; i++) {
-                    let p = platforms[i];
-                    if (this.x < p.x + p.width && this.x + this.width > p.x &&
-                        this.y < p.y + p.height && this.y + this.height > p.y) {
-                        
-                        if (axis === 'x') {
-                            if (this.vx > 0) this.x = p.x - this.width;
-                            else if (this.vx < 0) this.x = p.x + p.width;
-                            this.vx = 0;
-                        } else if (axis === 'y') {
-                            if (this.vy > 0) { 
-                                this.y = p.y - this.height;
-                                this.grounded = true;
-                            } else if (this.vy < 0) {
-                                this.y = p.y + p.height;
-                                if(p.type === 'quizblock' && !p.hit) {
-                                    triggerQuiz(p);
-                                }
-                            }
-                            this.vy = 0;
-                        }
-                    }
-                }
-            },
-
-            draw() {
-                if(this.isDead) return;
-                let dir = this.facingRight ? 1 : -1;
-                drawMario(this.x, this.y, !this.grounded, dir);
-            }
+        const step = () => {
+            const f = melody[this.musicStep % melody.length];
+            if (f) this.tone(f, 0.16, 'triangle', 0.35);
+            this.musicStep++;
+            this.musicTimer = setTimeout(step, 180);
         };
+        step();
+    },
+    toggleMute() {
+        this.muted = !this.muted;
+        if (this.master) this.master.gain.value = this.muted ? 0 : 0.22;
+        muteBtn.innerText = this.muted ? '🔇' : '🔊';
+        try { localStorage.setItem('kapon_muted', this.muted ? '1' : '0'); } catch (e) {}
+    }
+};
+muteBtn.addEventListener('click', () => {
+    AudioEngine.init();
+    AudioEngine.toggleMute();
+});
 
-        const platforms = [];
-        const enemies = [];
-        
-        function createLevel() {
-            platforms.length = 0;
-            enemies.length = 0;
+/* ============== GİRDİ ============== */
+const keys = { right: false, left: false, up: false };
+function resetKeys() { keys.right = false; keys.left = false; keys.up = false; }
+function inputBlocked() {
+    return quizScreen.style.display === 'flex' ||
+           gameOverScreen.style.display === 'flex' ||
+           lifeLostScreen.style.display === 'flex' ||
+           startScreen.style.display === 'flex';
+}
+window.addEventListener('keydown', (e) => {
+    if (inputBlocked()) return;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+    if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') { keys.up = true; e.preventDefault(); }
+});
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false;
+});
+const btnLeft = document.getElementById('btn-left');
+const btnRight = document.getElementById('btn-right');
+const btnJump = document.getElementById('btn-jump');
+btnLeft.addEventListener('pointerdown', e => { e.preventDefault(); keys.left = true; });
+btnLeft.addEventListener('pointerup', e => { e.preventDefault(); keys.left = false; });
+btnLeft.addEventListener('pointercancel', e => { e.preventDefault(); keys.left = false; });
+btnRight.addEventListener('pointerdown', e => { e.preventDefault(); keys.right = true; });
+btnRight.addEventListener('pointerup', e => { e.preventDefault(); keys.right = false; });
+btnRight.addEventListener('pointercancel', e => { e.preventDefault(); keys.right = false; });
+btnJump.addEventListener('pointerdown', e => { e.preventDefault(); keys.up = true; });
+btnJump.addEventListener('pointerup', e => { e.preventDefault(); keys.up = false; });
+btnJump.addEventListener('pointercancel', e => { e.preventDefault(); keys.up = false; });
 
-            let shuffledQuestionIndices = [];
-            for (let i = 0; i < questionsData.length; i++) {
-                shuffledQuestionIndices.push(i);
+/* ============== OYUN DURUMU ============== */
+let score = 0;
+let cameraX = 0;
+let isPaused = false;
+let isStarted = false;
+let reqId = null;
+let checkpoints = [];      // her bölüm başı için {x,y}
+let checkpointIndex = 0;
+
+const questionsData = [
+    { q: "Sana resmi olarak ilk aşkım dediğim tarih?", answers: ["13 mart", "13.03", "13mart"], failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔" },
+    { q: "Tartıştığımızda genellikle kim haklı olur? 🙄", answers: ["irem", "ben"], failMsg: "Daima sen haklısın, bunu bilmen lazımdı! 😂" },
+    { q: "Kim daha düşürücü? 🫠", answers: ["kerem", "sen"], failMsg: "Bence bunu bir daha düşün... 😉" },
+    { q: "Kim daha uykucu?", answers: ["irem", "ben"], failMsg: "Uykucu şirin kim biliyoruz... 😴" },
+    { q: "Kim daha çok seven kişinin PLANLARINI BOZUYOR????????? 🤔", answers: ["irem", "ben"], failMsg: "İtiraf etsene planları kim bozuyor! 🧐" },
+    { q: "Sana aşkım deyip korktuğum tarih?", answers: ["14 şubat", "14.02", "sevgililer günü", "14subat"], failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱" },
+    { q: "Göndermelerin olduğu tartışma tarihi?", answers: ["yok", "-", "hiç", "böyle bir tarih yok", "hatırlamıyorum"], failMsg: "O kadar gönderme boşa mı gitti yani? 🙄" },
+    { q: "WP'ye geçtiğimiz tarih?", answers: ["1 nisan", "01.04", "1nisan"], failMsg: "O tarihi bileceksin... O kadar heyecanlanmıştık! 😤" },
+    { q: "Kim numaralaşmak istedi? 🙄 (DÜNYANIN EN UTANÇ ANI)", answers: ["kerem", "sen"], failMsg: "O utanç anını başkasına yıkamazsın! 🫣" },
+    { q: "Benim çok sevip (fav değil) senin HİÇ sevmediğin yemek?", answers: ["nohut"], failMsg: "Nasıl sevmezsin nohutu ya... Bilemedin! 😡" },
+    { q: "Senin bayıla bayıla yediğin, benim nefret ettiğim o 'Gıda Katliamı' yemek? 🤢🤮", answers: ["döner", "soslu", "soslu döner", "bol soslu döner"], failMsg: "O soklu döneri midesi alan tek kişi sensin! 🤮" },
+    { q: "Kurgu yaptığımızda çıktığımız date'de sen hangi tatlıyı yedin?", answers: ["fıstık", "sarma", "fıstık sarma"], failMsg: "Yediğin tatlıyı bile unuttun mu? İnanılmaz... 🍰" },
+    { q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡", answers: ["fatih"], failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡" }
+];
+let currentQuizBlock = null;
+
+/* ============== MARIO ÇİZİMİ + YÜRÜME ANİMASYONU ============== */
+/* (Aynı pixel sanatı - değişiklik yok) */
+function marioFrame(isJumping, walkToggle) {
+    const R = '#f83800', B = '#0058f8', S = '#f8b800', H = '#5c3800', Y = '#ffff00', _ = null;
+    if (isJumping) {
+        return [
+            [_,_,_,R,R,R,R,R,R,_,_,_],[_,_,R,R,R,R,R,R,R,R,R,_],
+            [_,_,H,H,H,S,S,H,S,_,_,_],[_,H,S,H,S,S,S,H,S,S,S,_],
+            [_,H,S,H,H,S,S,S,H,S,S,S],[_,H,H,S,S,S,S,H,H,H,H,_],
+            [_,_,_,S,S,S,S,S,S,S,_,_],[_,_,_,R,R,R,B,R,R,_,_,_],
+            [_,_,R,R,R,R,B,R,R,R,_,_],[_,R,R,R,R,B,B,B,B,R,R,_],
+            [_,S,S,R,B,Y,B,B,Y,B,R,_],[_,S,S,S,B,B,B,B,B,B,S,_],
+            [_,_,S,B,B,B,B,B,B,B,B,_],[_,_,B,B,B,B,_,B,B,B,B,_],
+            [_,H,H,H,_,_,_,_,H,H,H,_],[H,H,H,H,_,_,_,_,H,H,H,H]
+        ];
+    }
+    const base = [
+        [_,_,_,R,R,R,R,R,R,_,_,_],[_,_,R,R,R,R,R,R,R,R,R,_],
+        [_,_,H,H,H,S,S,H,S,_,_,_],[_,H,S,H,S,S,S,H,S,S,S,_],
+        [_,H,S,H,H,S,S,S,H,S,S,S],[_,H,H,S,S,S,S,H,H,H,H,_],
+        [_,_,_,S,S,S,S,S,S,S,_,_],[_,_,R,R,B,R,R,R,_,_,_,_],
+        [_,R,R,R,B,R,R,B,R,R,R,_],[R,R,R,R,B,B,B,B,R,R,R,R],
+        [S,S,R,B,Y,B,B,Y,B,R,S,S],[S,S,S,B,B,B,B,B,B,S,S,S],
+        [S,S,B,B,B,B,B,B,B,B,S,S],[_,_,B,B,B,_,_,B,B,B,_,_],
+        [_,H,H,H,_,_,_,_,H,H,H,_],[H,H,H,H,_,_,_,_,H,H,H,H]
+    ];
+    if (walkToggle) {
+        base[14] = [_,_,H,H,H,_,_,_,_,H,H,_];
+        base[15] = [_,H,H,H,H,_,_,_,H,H,H,_];
+    }
+    return base;
+}
+function drawMario(x, y, isJumping, direction, walkToggle) {
+    const pixels = marioFrame(isJumping, walkToggle);
+    const pixelSize = 2;
+    ctx.save();
+    ctx.translate(x, y);
+    if (direction < 0) { ctx.scale(-1, 1); ctx.translate(-24, 0); }
+    for (let row = 0; row < pixels.length; row++) {
+        for (let col = 0; col < pixels[row].length; col++) {
+            if (pixels[row][col] !== null) {
+                ctx.fillStyle = pixels[row][col];
+                ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
             }
-            for (let i = shuffledQuestionIndices.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffledQuestionIndices[i], shuffledQuestionIndices[j]] = [shuffledQuestionIndices[j], shuffledQuestionIndices[i]];
-            }
+        }
+    }
+    ctx.restore();
+}
 
-            let currentX = 0;
-            
-            for(let i = 0; i < 13; i++) {
-                let type = i % 4; // 4 Farklı Parkur Döngüsü
+/* ============== OYUNCU ============== */
+const player = {
+    x: 50, y: 50, width: 24, height: 32,
+    vx: 0, vy: 0, speed: 4.5, jumpPower: -12.5, gravity: 0.65,
+    grounded: false, isDead: false, facingRight: true,
+    lives: MAX_LIVES, walkTimer: 0, walkToggle: false, standingOn: null,
 
-                if(type === 0) {
-                    // 1. KLASİK UÇURUM
-                    platforms.push({ x: currentX, y: 350, width: 350, height: 50, type: 'ground' });
-                    platforms.push({ x: currentX + 420, y: 300, width: 64, height: 20, type: 'ground' }); 
-                    platforms.push({ x: currentX + 540, y: 350, width: 460, height: 50, type: 'ground' });
-                    
-                    platforms.push({ x: currentX + 650, y: 200, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
-                    platforms.push({ x: currentX + 618, y: 200, width: 32, height: 32, type: 'brick' });
-                    platforms.push({ x: currentX + 682, y: 200, width: 32, height: 32, type: 'brick' });
-                    
-                    enemies.push({ x: currentX + 750, y: 326, width: 24, height: 24, minX: currentX + 600, maxX: currentX + 900, vx: -1.5, alive: true });
-                } 
-                else if(type === 1) {
-                    // 2. BORU İSTİLASI
-                    platforms.push({ x: currentX, y: 350, width: 1000, height: 50, type: 'ground' });
-                    
-                    platforms.push({ x: currentX + 300, y: 290, width: 40, height: 60, type: 'pipe' });
-                    enemies.push({ x: currentX + 400, y: 326, width: 24, height: 24, minX: currentX + 350, maxX: currentX + 450, vx: -1, alive: true });
-                    
-                    platforms.push({ x: currentX + 500, y: 260, width: 40, height: 90, type: 'pipe' });
-                    
-                    platforms.push({ x: currentX + 700, y: 200, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
-                    
-                    enemies.push({ x: currentX + 800, y: 326, width: 24, height: 24, minX: currentX + 600, maxX: currentX + 950, vx: -2, alive: true });
-                }
-                else if(type === 2) {
-                    // 3. MERDİVENLER
-                    platforms.push({ x: currentX, y: 350, width: 1000, height: 50, type: 'ground' });
-                    
-                    platforms.push({ x: currentX + 250, y: 318, width: 32, height: 32, type: 'brick' });
-                    platforms.push({ x: currentX + 282, y: 286, width: 32, height: 64, type: 'brick' });
-                    platforms.push({ x: currentX + 314, y: 254, width: 32, height: 96, type: 'brick' });
-                    
-                    platforms.push({ x: currentX + 500, y: 150, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
-                    platforms.push({ x: currentX + 500, y: 250, width: 32, height: 32, type: 'brick' }); // Alt basamak
+    update() {
+        if (this.isDead || isPaused || !isStarted) return;
 
-                    enemies.push({ x: currentX + 700, y: 326, width: 24, height: 24, minX: currentX + 400, maxX: currentX + 900, vx: -1.5, alive: true });
-                }
-                else if(type === 3) {
-                    // 4. YÜKSEK UÇAN ADALAR
-                    platforms.push({ x: currentX, y: 350, width: 250, height: 50, type: 'ground' });
-                    
-                    platforms.push({ x: currentX + 350, y: 250, width: 64, height: 20, type: 'ground' }); 
-                    platforms.push({ x: currentX + 500, y: 180, width: 64, height: 20, type: 'ground' }); 
-                    
-                    platforms.push({ x: currentX + 516, y: 80, width: 32, height: 32, type: 'quizblock', hit: false, qIndex: shuffledQuestionIndices[i] });
-                    
-                    platforms.push({ x: currentX + 650, y: 350, width: 350, height: 50, type: 'ground' });
-                    
-                    platforms.push({ x: currentX + 850, y: 300, width: 40, height: 50, type: 'pipe' });
-                }
-                
-                currentX += 1000; 
-            }
+        if (keys.right) { this.vx = this.speed; this.facingRight = true; }
+        else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
+        else this.vx = 0;
 
-            // Bitiş Bayrağı Zemini
-            platforms.push({ x: currentX, y: 350, width: 1000, height: 50, type: 'ground' });
+        if (this.vx !== 0 && this.grounded) {
+            this.walkTimer++;
+            if (this.walkTimer > 8) { this.walkToggle = !this.walkToggle; this.walkTimer = 0; }
+        } else { this.walkToggle = false; this.walkTimer = 0; }
+
+        if (keys.up && this.grounded) {
+            this.vy = this.jumpPower;
+            this.grounded = false;
+            AudioEngine.jump();
         }
 
-        function updateEnemies() {
-            if(isPaused) return;
-            enemies.forEach(e => {
-                if (e.alive) {
-                    e.x += e.vx;
-                    if (e.x <= e.minX || e.x >= e.maxX) e.vx *= -1; 
-                }
-            });
+        this.vy += this.gravity;
+
+        const prevX = this.x;
+        this.x += this.vx;
+        if (this.x < 0) this.x = 0;
+        this.checkCollisions('x', prevX);
+
+        const prevY = this.y;
+        this.y += this.vy;
+        this.grounded = false;
+        this.standingOn = null;
+        this.checkCollisions('y', prevY);
+
+        // Kırılan blok üstünde durma
+        if (this.standingOn && this.standingOn.type === 'crumble' && !this.standingOn.broken) {
+            this.standingOn.crumbleTimer = (this.standingOn.crumbleTimer || 0) + 1;
+            if (this.standingOn.crumbleTimer > 40) this.standingOn.broken = true;
         }
 
-        function triggerQuiz(blockInfo) {
-            resetKeys(); 
-            isPaused = true; 
-            currentQuizBlock = blockInfo; 
-            
-            const quizData = questionsData[blockInfo.qIndex];
-            document.getElementById('quiz-question').innerText = quizData.q;
-            quizInput.value = ''; 
-            
-            quizScreen.style.display = 'flex'; 
-            quizInput.focus(); 
-        }
-
-        document.getElementById('quiz-submit').addEventListener('click', checkTypedAnswer);
-        quizInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') checkTypedAnswer();
-        });
-
-        function checkTypedAnswer() {
-            const userAnswer = quizInput.value.toLowerCase().trim();
-            const quizData = questionsData[currentQuizBlock.qIndex];
-            
-            let isCorrect = quizData.answers.some(ans => userAnswer.includes(ans) || ans.includes(userAnswer) && userAnswer.length > 2);
-            
-            if(userAnswer.length < 1) return; 
-
-            quizScreen.style.display = 'none'; 
-            resetKeys();
-            
-            if (isCorrect) {
-                currentQuizBlock.hit = true; 
-                score += 500; 
+        // Coin toplama (daire-rect çarpışması)
+        for (let i = 0; i < coins.length; i++) {
+            const c = coins[i];
+            if (c.collected) continue;
+            const closestX = Math.max(this.x, Math.min(c.x, this.x + this.width));
+            const closestY = Math.max(this.y, Math.min(c.y, this.y + this.height));
+            const dx = c.x - closestX;
+            const dy = c.y - closestY;
+            if (dx * dx + dy * dy < (c.r + 2) * (c.r + 2)) {
+                c.collected = true;
+                score += 150;
                 updateScore();
-                isPaused = false; 
-            } else {
-                isPaused = false;
-                die(quizData.failMsg); 
+                AudioEngine.coin();
             }
         }
 
-        function drawGame() {
-            ctx.fillStyle = '#fff';
-            for(let i=0; i<30; i++) {
-                ctx.fillRect(150 + i*500, 80, 60, 20);
-                ctx.fillRect(160 + i*500, 60, 40, 20);
-                ctx.fillRect(350 + i*500, 50, 80, 25);
-                ctx.fillRect(370 + i*500, 30, 40, 20);
+        // Dikenler
+        for (let i = 0; i < platforms.length; i++) {
+            const p = platforms[i];
+            if (p.type === 'spike' &&
+                this.x < p.x + p.width && this.x + this.width > p.x &&
+                this.y < p.y + p.height && this.y + this.height > p.y) {
+                loseLife("DİKENLERE BASTIN! 🌵\nDaha dikkatli ol...");
+                return;
             }
+        }
 
-            // Bitiş Bayrağı
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(13000, 50, 4, 300); 
-            ctx.fillStyle = '#00a800';
-            ctx.fillRect(12994, 42, 16, 16); 
-            ctx.fillStyle = '#000';
-            ctx.beginPath();
-            ctx.moveTo(13004, 60); ctx.lineTo(13040, 75); ctx.lineTo(13004, 90); ctx.fill(); 
-            
-            platforms.forEach(p => {
-                if (p.type === 'ground') {
-                    ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
-                    ctx.fillStyle = '#000'; ctx.fillRect(p.x, p.y, p.width, 2); 
-                } 
-                else if (p.type === 'brick') {
-                    ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
-                    ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+        // Düşmanlar
+        for (let i = 0; i < enemies.length; i++) {
+            let e = enemies[i];
+            if (e.alive &&
+                this.x < e.x + e.width && this.x + this.width > e.x &&
+                this.y < e.y + e.height && this.y + this.height > e.y) {
+
+                const wasAbove = (this.y - this.vy + this.height) <= e.y + 6;
+                if (e.stompable && this.vy > 0 && wasAbove) {
+                    e.alive = false;
+                    this.vy = -7;
+                    score += 100;
+                    updateScore();
+                    AudioEngine.stomp();
+                } else {
+                    loseLife(e.kind === 'flyer' ? "UÇAN CANLI SENİ YAKALADI! 🦇" : "BİR CANLIYA ÇARPTIN! 👾");
+                    return;
                 }
-                else if (p.type === 'pipe') {
-                    ctx.fillStyle = '#00a800'; ctx.fillRect(p.x, p.y, p.width, p.height);
-                    ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-                    ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
-                }
-                else if (p.type === 'quizblock') {
-                    ctx.fillStyle = p.hit ? '#c84c0c' : '#b026ff';
-                    ctx.fillRect(p.x, p.y, p.width, p.height);
-                    ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-                    if(!p.hit) { 
-                        ctx.fillStyle = '#fff'; ctx.font = '20px monospace'; 
-                        ctx.fillText('?', p.x + 10, p.y + 24); 
+            }
+        }
+
+        // Bitiş kontrolü (finish x hesaplanıyor createLevel ile)
+        const finishX = checkpoints.length ? checkpoints[checkpoints.length - 1].x + 300 : Infinity;
+        if (this.x >= finishX) winGame();
+        if (this.y > canvas.height + 150) { loseLife("ÇUKURA DÜŞTÜN! 😱"); return; }
+
+        // Checkpoint güncelle (bir sonraki bölüme geçince)
+        const segIdx = Math.min(TOTAL_SEGMENTS - 1, Math.floor(this.x / SEGMENT_WIDTH));
+        if (segIdx > checkpointIndex) {
+            checkpointIndex = segIdx;
+            updateProgressUI();
+        }
+    },
+
+    checkCollisions(axis, prevPos) {
+        for (let i = 0; i < platforms.length; i++) {
+            let p = platforms[i];
+            if (p.type === 'spike') continue;
+            if (p.type === 'crumble' && p.broken) continue;
+            if (p.type === 'gate' && p.linked.hit) continue;
+
+            if (this.x < p.x + p.width && this.x + this.width > p.x &&
+                this.y < p.y + p.height && this.y + this.height > p.y) {
+
+                if (axis === 'x') {
+                    if (prevPos + this.width <= p.x) this.x = p.x - this.width;
+                    else if (prevPos >= p.x + p.width) this.x = p.x + p.width;
+                    this.vx = 0;
+                } else if (axis === 'y') {
+                    if (this.vy > 0) {
+                        this.y = p.y - this.height;
+                        this.grounded = true;
+                        this.standingOn = p;
+                    } else if (this.vy < 0) {
+                        this.y = p.y + p.height;
+                        if (p.type === 'quizblock' && !p.hit && !isPaused) triggerQuiz(p);
                     }
+                    this.vy = 0;
                 }
-            });
-
-            enemies.forEach(e => {
-                if(e.alive) {
-                    ctx.fillStyle = '#8b4513'; ctx.fillRect(e.x, e.y, e.width, e.height);
-                    ctx.fillStyle = '#ffcc99'; ctx.fillRect(e.x, e.y+20, 8, 4); ctx.fillRect(e.x+16, e.y+20, 8, 4);
-                    ctx.fillStyle = '#fff'; ctx.fillRect(e.x+4, e.y+6, 6, 8); ctx.fillRect(e.x+14, e.y+6, 6, 8);
-                    ctx.fillStyle = '#000'; ctx.fillRect(e.x+6, e.y+10, 2, 2); ctx.fillRect(e.x+16, e.y+10, 2, 2);
-                }
-            });
-        }
-
-        function updateScore() {
-            document.getElementById('score').innerText = String(score).padStart(6, '0');
-        }
-
-        function die(reason) {
-            if(player.isDead) return;
-            resetKeys();
-            player.isDead = true;
-            document.getElementById('go-title').innerText = reason; 
-            document.getElementById('go-title').style.color = "#ff003c";
-            document.getElementById('btn-restart').innerText = "HATANI TELAFİ ET";
-            gameOverScreen.style.display = 'flex';
-        }
-
-        function winGame() {
-            if(player.isDead) return;
-            resetKeys();
-            player.isDead = true; 
-            document.getElementById('go-title').innerText = "VEEE FİNAL! 💖\nTÜM SORULARI GEÇTİN!";
-            document.getElementById('go-title').style.color = "#00ff66";
-            document.getElementById('btn-restart').innerText = "SENİ ÇOK SEVİYORUM!";
-            gameOverScreen.style.display = 'flex';
-        }
-
-        function restartGame() {
-            resetKeys();
-            player.x = 50; player.y = 50; player.vx = 0; player.vy = 0;
-            player.isDead = false;
-            isPaused = false;
-            score = 0;
-            updateScore();
-            createLevel();
-            gameOverScreen.style.display = 'none';
-        }
-
-        document.getElementById('btn-restart').addEventListener('click', () => {
-            if(document.getElementById('btn-restart').innerText === "SENİ ÇOK SEVİYORUM!") {
-                // Oyun bitti, bir şey yapma
-            } else {
-                restartGame();
             }
-        });
+        }
+    },
 
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    draw() {
+        if (this.isDead) return;
+        let dir = this.facingRight ? 1 : -1;
+        drawMario(this.x, this.y, !this.grounded, dir, this.walkToggle);
+    }
+};
 
-            let targetCamX = player.x - canvas.width / 2 + player.width / 2;
-            if (targetCamX < 0) targetCamX = 0;
-            if (targetCamX > 12700) targetCamX = 12700; 
-            cameraX = targetCamX;
+/* ============== SEVİYE OLUŞTURMA ============== */
+const platforms = [];
+const enemies = [];
+const coins = [];
 
-            ctx.save();
-            ctx.translate(-cameraX, 0);
+function addQuizAndGate(currentX, qx, qy, qIndex) {
+    const block = { x: qx, y: qy, width: 32, height: 32, type: 'quizblock', hit: false, qIndex };
+    platforms.push(block);
+    const gate = { x: qx + 70, y: -1200, width: 22, height: 1700, type: 'gate', linked: block };
+    platforms.push(gate);
+    return block;
+}
 
-            drawGame();
-            updateEnemies();
-            player.update();
-            player.draw();
+function createLevel() {
+    platforms.length = 0;
+    enemies.length = 0;
+    coins.length = 0;
+    checkpoints = [];
+    checkpointIndex = 0;
 
-            ctx.restore();
+    // shuffle question indices once
+    let shuffled = questionsData.map((_, i) => i);
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
 
-            if(!isGameOver) reqId = requestAnimationFrame(animate);
+    let currentX = 0;
+
+    for (let i = 0; i < TOTAL_SEGMENTS; i++) {
+        checkpoints.push({ x: currentX + 20, y: 50 });
+        let type = i % 6;
+
+        // place several coins per segment for challenge
+        const coinCount = 5 + Math.floor(Math.random() * 4);
+        for (let c = 0; c < coinCount; c++) {
+            coins.push({ x: currentX + 120 + c * 80 + Math.random() * 60, y: 220 + Math.random() * 80, r: 8, collected: false });
         }
 
-        createLevel();
-        animate();
+        if (type === 0) {
+            platforms.push({ x: currentX, y: 420, width: 350, height: 50, type: 'ground' });
+            platforms.push({ x: currentX + 420, y: 370, width: 64, height: 20, type: 'ground' });
+            platforms.push({ x: currentX + 540, y: 420, width: 460, height: 50, type: 'ground' });
+            addQuizAndGate(currentX, currentX + 650, 220, shuffled[i % shuffled.length]);
+            platforms.push({ x: currentX + 618, y: 220, width: 32, height: 32, type: 'brick' });
+            enemies.push({ x: currentX + 800, y: 396, width: 24, height: 24, minX: currentX + 780, maxX: currentX + 970, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
+            enemies.push({ x: currentX + 920, y: 396, width: 24, height: 24, minX: currentX + 900, maxX: currentX + 1060, vx: -2.0, alive: true, stompable: true, kind: 'goomba' });
+        }
+        else if (type === 1) {
+            platforms.push({ x: currentX, y: 420, width: 1000, height: 50, type: 'ground' });
+            platforms.push({ x: currentX + 250, y: 360, width: 40, height: 60, type: 'pipe' });
+            enemies.push({ x: currentX + 350, y: 396, width: 24, height: 24, minX: currentX + 300, maxX: currentX + 420, vx: -1, alive: true, stompable: true, kind: 'goomba' });
+            addQuizAndGate(currentX, currentX + 550, 220, shuffled[i % shuffled.length]);
+            enemies.push({ x: currentX + 800, y: 396, width: 24, height: 24, minX: currentX + 750, maxX: currentX + 970, vx: -2.8, alive: true, stompable: true, kind: 'goomba' });
+            enemies.push({ x: currentX + 720, y: 396, width: 24, height: 24, minX: currentX + 690, maxX: currentX + 830, vx: -1.7, alive: true, stompable: true, kind: 'goomba' });
+        }
+        else if (type === 2) {
+            platforms.push({ x: currentX, y: 420, width: 1000, height: 50, type: 'ground' });
+            platforms.push({ x: currentX + 250, y: 388, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: currentX + 282, y: 356, width: 32, height: 64, type: 'brick' });
+            platforms.push({ x: currentX + 314, y: 324, width: 32, height: 96, type: 'brick' });
+            addQuizAndGate(currentX, currentX + 500, 200, shuffled[i % shuffled.length]);
+            platforms.push({ x: currentX + 500, y: 300, width: 32, height: 32, type: 'brick' });
+            enemies.push({ x: currentX + 750, y: 396, width: 24, height: 24, minX: currentX + 700, maxX: currentX + 950, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
+        }
+        else if (type === 3) {
+            platforms.push({ x: currentX, y: 420, width: 250, height: 50, type: 'ground' });
+            platforms.push({ x: currentX + 350, y: 320, width: 64, height: 20, type: 'ground' });
+            platforms.push({ x: currentX + 500, y: 240, width: 64, height: 20, type: 'ground' });
+            addQuizAndGate(currentX, currentX + 516, 120, shuffled[i % shuffled.length]);
+            platforms.push({ x: currentX + 650, y: 420, width: 350, height: 50, type: 'ground' });
+            enemies.push({ x: currentX + 200, y: 120, width: 24, height: 24, minY: 60, maxY: 260, x0: currentX + 200, vy: 1.4, alive: true, stompable: false, kind: 'flyer', vx: 0 });
+            enemies.push({ x: currentX + 240, y: 180, width: 24, height: 24, minY: 80, maxY: 300, x0: currentX + 240, vy: 1.1, alive: true, stompable: false, kind: 'flyer', vx: 0 });
+        }
+        else if (type === 4) {
+            platforms.push({ x: currentX, y: 420, width: 220, height: 50, type: 'ground' });
+            platforms.push({ x: currentX + 220, y: 412, width: 90, height: 8, type: 'spike' });
+            platforms.push({ x: currentX + 340, y: 420, width: 200, height: 50, type: 'ground' });
+            platforms.push({ x: currentX + 540, y: 370, width: 64, height: 20, type: 'ground' });
+            addQuizAndGate(currentX, currentX + 560, 200, shuffled[i % shuffled.length]);
+            platforms.push({ x: currentX + 700, y: 420, width: 300, height: 50, type: 'ground' });
+            platforms.push({ x: currentX + 850, y: 412, width: 90, height: 8, type: 'spike' });
+            enemies.push({ x: currentX + 600, y: 396, width: 24, height: 24, minX: currentX + 580, maxX: currentX + 680, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
+        }
+        else {
+            platforms.push({ x: currentX, y: 420, width: 250, height: 50, type: 'ground' });
+            platforms.push({
+                x: currentX + 320, y: 360, width: 70, height: 20, type: 'moving',
+                minY: 150, maxY: 360, vy: -1.6
+            });
+            platforms.push({ x: currentX + 480, y: 320, width: 32, height: 32, type: 'crumble' });
+            platforms.push({ x: currentX + 520, y: 320, width: 32, height: 32, type: 'crumble' });
+            addQuizAndGate(currentX, currentX + 470, 200, shuffled[i % shuffled.length]);
+            platforms.push({ x: currentX + 650, y: 420, width: 350, height: 50, type: 'ground' });
+            enemies.push({ x: currentX + 800, y: 396, width: 24, height: 24, minX: currentX + 750, maxX: currentX + 950, vx: -2, alive: true, stompable: true, kind: 'goomba' });
+            enemies.push({ x: currentX + 880, y: 396, width: 24, height: 24, minX: currentX + 840, maxX: currentX + 1060, vx: -1.4, alive: true, stompable: true, kind: 'goomba' });
+        }
 
-    </script>
+        // ekstra rasgele düşman (zorluk için)
+        if (Math.random() < 0.6) {
+            enemies.push({ x: currentX + 200 + Math.random() * 800, y: 396, width: 24, height: 24, minX: currentX + 150, maxX: currentX + 1100, vx: -1 - Math.random() * 1.5, alive: true, stompable: true, kind: 'goomba' });
+        }
+
+        currentX += SEGMENT_WIDTH;
+    }
+    // final ground
+    platforms.push({ x: currentX, y: 420, width: 600, height: 50, type: 'ground' });
+    updateProgressUI();
+}
+
+/* ============== ENEMY / PLATFORM UPDATE ============== */
+function updateEnemies() {
+    if (isPaused || !isStarted) return;
+    enemies.forEach(e => {
+        if (!e.alive) return;
+        if (e.kind === 'flyer') {
+            e.y += e.vy;
+            if (e.y <= e.minY || e.y >= e.maxY) e.vy *= -1;
+        } else {
+            e.x += e.vx;
+            if (e.x <= e.minX || e.x >= e.maxX) e.vx *= -1;
+        }
+    });
+}
+function updateMovingPlatforms() {
+    if (isPaused || !isStarted) return;
+    platforms.forEach(p => {
+        if (p.type === 'moving') {
+            p.y += p.vy;
+            if (p.y <= p.minY || p.y >= p.maxY) p.vy *= -1;
+        }
+    });
+}
+
+/* ============== QUIZ ============== */
+function triggerQuiz(blockInfo) {
+    resetKeys();
+    isPaused = true;
+    currentQuizBlock = blockInfo;
+    const quizData = questionsData[blockInfo.qIndex % questionsData.length];
+    document.getElementById('quiz-question').innerText = quizData.q;
+    quizInput.value = '';
+    quizScreen.style.display = 'flex';
+    requestAnimationFrame(() => quizInput.focus());
+}
+
+document.getElementById('quiz-submit').addEventListener('click', checkTypedAnswer);
+quizInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(); });
+
+function normalizeText(s) {
+    return s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : s;
+}
+function checkTypedAnswer() {
+    const userAnswer = normalizeText(quizInput.value.toLowerCase().trim());
+    if (userAnswer.length < 1) return;
+    const quizData = questionsData[currentQuizBlock.qIndex % questionsData.length];
+
+    let isCorrect = quizData.answers.some(ans => {
+        const nAns = normalizeText(ans.toLowerCase());
+        if (userAnswer.length < 2) return false;
+        return userAnswer === nAns || userAnswer.includes(nAns) || nAns.includes(userAnswer);
+    });
+
+    quizScreen.style.display = 'none';
+    resetKeys();
+
+    if (isCorrect) {
+        currentQuizBlock.hit = true;
+        score += 500;
+        updateScore();
+        isPaused = false;
+        AudioEngine.correct();
+    } else {
+        isPaused = false;
+        AudioEngine.wrong();
+        loseLife(quizData.failMsg);
+    }
+}
+
+/* ============== ÇİZİM ============== */
+function drawGame() {
+    // parallax arka plan süsleri
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 40; i++) {
+        ctx.fillRect(150 + i * 700, 80, 60, 20);
+        ctx.fillRect(160 + i * 700, 60, 40, 20);
+        ctx.fillRect(350 + i * 700, 50, 80, 25);
+        ctx.fillRect(370 + i * 700, 30, 40, 20);
+    }
+
+    const finishX = checkpoints[checkpoints.length - 1].x + 300;
+    ctx.fillStyle = '#fff'; ctx.fillRect(finishX, 50, 4, canvas.height - 60);
+    ctx.fillStyle = '#00a800'; ctx.fillRect(finishX - 6, 42, 16, 16);
+    ctx.fillStyle = '#000'; ctx.beginPath();
+    ctx.moveTo(finishX + 4, 60); ctx.lineTo(finishX + 40, 75); ctx.lineTo(finishX + 4, 90); ctx.fill();
+
+    // platformlar
+    platforms.forEach(p => {
+        if (p.type === 'ground') {
+            ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.fillStyle = '#000'; ctx.fillRect(p.x, p.y, p.width, 2);
+        } else if (p.type === 'brick') {
+            ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+        } else if (p.type === 'pipe') {
+            ctx.fillStyle = '#00a800'; ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+            ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
+        } else if (p.type === 'quizblock') {
+            ctx.fillStyle = p.hit ? '#c84c0c' : '#b026ff';
+            ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+            if (!p.hit) { ctx.fillStyle = '#fff'; ctx.font = '20px monospace'; ctx.fillText('?', p.x + 10, p.y + 24); }
+        } else if (p.type === 'spike') {
+            ctx.fillStyle = '#999';
+            const n = Math.floor(p.width / 15);
+            for (let s = 0; s < n; s++) {
+                ctx.beginPath();
+                ctx.moveTo(p.x + s * 15, p.y + p.height);
+                ctx.lineTo(p.x + s * 15 + 7, p.y - 10);
+                ctx.lineTo(p.x + s * 15 + 15, p.y + p.height);
+                ctx.fill();
+            }
+        } else if (p.type === 'moving') {
+            ctx.fillStyle = '#ffd400'; ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+        } else if (p.type === 'crumble' && !p.broken) {
+            const shake = (p.crumbleTimer || 0) > 20 ? (Math.random() * 4 - 2) : 0;
+            ctx.fillStyle = (p.crumbleTimer || 0) > 20 ? '#ff6600' : '#8b5a2b';
+            ctx.fillRect(p.x + shake, p.y, p.width, p.height);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x + shake, p.y, p.width, p.height);
+        } else if (p.type === 'gate' && !p.linked.hit) {
+            ctx.save();
+            ctx.globalAlpha = 0.35 + 0.15 * Math.sin(Date.now() / 150);
+            ctx.fillStyle = '#b026ff';
+            ctx.fillRect(p.x, 0, p.width, canvas.height);
+            ctx.restore();
+        }
+    });
+
+    // coinler
+    coins.forEach(c => {
+        if (c.collected) return;
+        ctx.save();
+        ctx.fillStyle = '#ffd400';
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(c.x - 3, c.y - 3, c.r * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // düşmanlar
+    enemies.forEach(e => {
+        if (!e.alive) return;
+        if (e.kind === 'flyer') {
+            ctx.fillStyle = '#7a2a8a'; ctx.fillRect(e.x, e.y, e.width, e.height);
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.moveTo(e.x, e.y + 10); ctx.lineTo(e.x - 12, e.y + 2); ctx.lineTo(e.x, e.y + 18); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(e.x + e.width, e.y + 10); ctx.lineTo(e.x + e.width + 12, e.y + 2); ctx.lineTo(e.x + e.width, e.y + 18); ctx.fill();
+            ctx.fillStyle = '#ff003c'; ctx.fillRect(e.x + 6, e.y + 8, 4, 4); ctx.fillRect(e.x + 14, e.y + 8, 4, 4);
+        } else {
+            ctx.fillStyle = '#8b4513'; ctx.fillRect(e.x, e.y, e.width, e.height);
+            ctx.fillStyle = '#ffcc99'; ctx.fillRect(e.x, e.y + 20, 8, 4); ctx.fillRect(e.x + 16, e.y + 20, 8, 4);
+            ctx.fillStyle = '#fff'; ctx.fillRect(e.x + 4, e.y + 6, 6, 8); ctx.fillRect(e.x + 14, e.y + 6, 6, 8);
+            ctx.fillStyle = '#000'; ctx.fillRect(e.x + 6, e.y + 10, 2, 2); ctx.fillRect(e.x + 16, e.y + 10, 2, 2);
+        }
+    });
+}
+
+/* ============== UI ============== */
+function updateScore() { document.getElementById('score').innerText = String(score).padStart(6, '0'); }
+function updateProgressUI() {
+    const segNum = Math.min(TOTAL_SEGMENTS, checkpointIndex + 1);
+    document.getElementById('progress-label').textContent = `BÖLÜM ${segNum}/${TOTAL_SEGMENTS}`;
+    // hearts are shown in separate span:
+    document.getElementById('progress-label').appendChild(document.createElement('br'));
+    const heartsSpan = document.createElement('span');
+    heartsSpan.id = 'hearts';
+    heartsSpan.style.color = '#ff003c';
+    heartsSpan.style.fontSize = '14px';
+    heartsSpan.textContent = '❤'.repeat(player.lives) + '🖤'.repeat(MAX_LIVES - player.lives);
+    const existing = document.getElementById('hearts');
+    if (existing) existing.replaceWith(heartsSpan);
+    else document.getElementById('progress-label').appendChild(heartsSpan);
+}
+function updateHeartsUI() {
+    const existing = document.getElementById('hearts');
+    if (existing) existing.innerText = '❤'.repeat(player.lives) + '🖤'.repeat(MAX_LIVES - player.lives);
+}
+
+/* ============== CAN / ÖLÜM SİSTEMİ ============== */
+function loseLife(reason) {
+    if (player.isDead) return;
+    player.isDead = true;
+    resetKeys();
+    AudioEngine.lifeLost();
+    player.lives = Math.max(0, player.lives - 1);
+    updateHeartsUI();
+
+    if (player.lives > 0) {
+        document.getElementById('ll-title').innerText = reason;
+        document.getElementById('ll-sub').innerText = `${player.lives} canın kaldı. Son checkpoint'ten devam edeceksin.`;
+        lifeLostScreen.style.display = 'flex';
+    } else {
+        document.getElementById('go-title').innerText = reason + "\n\nCANLARIN BİTTİ! HER ŞEY BAŞA SARDI...";
+        document.getElementById('go-title').style.color = "#ff003c";
+        document.getElementById('btn-restart').innerText = "HATANI TELAFİ ET";
+        gameOverScreen.style.display = 'flex';
+    }
+}
+
+document.getElementById('btn-continue').addEventListener('click', () => {
+    lifeLostScreen.style.display = 'none';
+    const cp = checkpoints[checkpointIndex];
+    player.x = cp.x; player.y = cp.y; player.vx = 0; player.vy = 0;
+    player.isDead = false;
+    isPaused = false;
+});
+
+function winGame() {
+    if (player.isDead) return;
+    resetKeys();
+    player.isDead = true;
+    AudioEngine.fanfare();
+    document.getElementById('go-title').innerText = "VEEE FİNAL! 💖\nTÜM SORULARI GEÇTİN!";
+    document.getElementById('go-title').style.color = "#00ff66";
+    document.getElementById('btn-restart').innerText = "SENİ ÇOK SEVİYORUM!";
+    gameOverScreen.style.display = 'flex';
+}
+
+function fullRestart() {
+    resetKeys();
+    player.lives = MAX_LIVES;
+    player.x = 50; player.y = 50; player.vx = 0; player.vy = 0;
+    player.isDead = false;
+    isPaused = false;
+    score = 0;
+    updateScore();
+    updateHeartsUI();
+    createLevel();
+    gameOverScreen.style.display = 'none';
+    startScreen.style.display = 'none';
+}
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+    if (document.getElementById('btn-restart').innerText === "SENİ ÇOK SEVİYORUM!") return;
+    fullRestart();
+});
+
+document.getElementById('start-btn').addEventListener('click', () => {
+    AudioEngine.init();
+    // resume audio context on user gesture (some browsers require this)
+    if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
+    AudioEngine.startMusic();
+    startScreen.style.display = 'none';
+    isStarted = true;
+});
+
+/* ============== ANA DÖNGÜ ============== */
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let targetCamX = player.x - canvas.width / 2 + player.width / 2;
+    if (targetCamX < 0) targetCamX = 0;
+    const maxCam = checkpoints.length ? checkpoints[checkpoints.length - 1].x + 300 - canvas.width / 2 : 0;
+    if (targetCamX > maxCam) targetCamX = maxCam;
+    cameraX = targetCamX;
+
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+    drawGame();
+    updateEnemies();
+    updateMovingPlatforms();
+    player.update();
+    player.draw();
+    ctx.restore();
+
+    if (reqId) cancelAnimationFrame(reqId);
+    reqId = requestAnimationFrame(animate);
+}
+
+/* ============== İLK YÜKLEME ============== */
+createLevel();
+updateScore();
+updateHeartsUI();
+animate();
+</script>
 </body>
 </html>
