@@ -138,7 +138,8 @@ const quizInput = document.getElementById('quiz-input');
 const muteBtn = document.getElementById('mute-btn');
 
 const TOTAL_SEGMENTS = 20;
-const SEGMENT_WIDTH = 1200;
+// ÇUKUR BOŞLUKLARI TAM 130 PİKSEL OLACAK ŞEKİLDE AYARLANDI
+const SEGMENT_WIDTH = 1130; 
 const MAX_LIVES = 3;
 
 /* ============== SES MOTORU ============== */
@@ -238,7 +239,6 @@ let reqId = null;
 let checkpoints = [];
 let checkpointIndex = 0;
 
-// CEVAPLAR İNGİLİZCE KARAKTERLERLE (ş->s, ı->i, ğ->g) TEMİZLENDİ
 const questionsData = [
     { q: "Sana resmi olarak ilk aşkım dediğim tarih?", answers: ["13 mart", "13.03", "13mart"], failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔" },
     { q: "Tartıştığımızda genellikle kim haklı olur? 🙄", answers: ["irem", "ben"], failMsg: "Daima sen haklısın, bunu bilmen lazımdı! 😂" },
@@ -307,7 +307,7 @@ function drawMario(x, y, isJumping, direction, walkToggle) {
 /* ============== OYUNCU ============== */
 const player = {
     x: 50, y: 50, width: 24, height: 32,
-    vx: 0, vy: 0, speed: 4.5, jumpPower: -13.0, gravity: 0.65,
+    vx: 0, vy: 0, speed: 5.2, jumpPower: -13.5, gravity: 0.65,
     grounded: false, isDead: false, facingRight: true,
     lives: MAX_LIVES, walkTimer: 0, walkToggle: false, standingOn: null,
 
@@ -589,10 +589,8 @@ function triggerQuiz(blockInfo) {
 document.getElementById('quiz-submit').addEventListener('click', checkTypedAnswer);
 quizInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(); });
 
-// TÜRKÇE KARAKTERLERİ VE BÜYÜK/KÜÇÜK HARFLERİ KUSURSUZ OKUYAN SİSTEM
 function normalizeText(s) {
     let str = s.toLowerCase().trim();
-    // Klavyeden girilen tüm belalı Türkçe harfleri düz İngilizceye çevir
     str = str.replace(/ç/g, 'c')
              .replace(/ğ/g, 'g')
              .replace(/ı/g, 'i')
@@ -606,12 +604,11 @@ function normalizeText(s) {
 function checkTypedAnswer() {
     const userAnswer = normalizeText(quizInput.value);
     
-    if (userAnswer.length < 1) return; // Boş basmayı engelle (Ama 1 harfli "-" işaretine izin ver!)
+    if (userAnswer.length < 1) return; 
 
     const quizData = questionsData[currentQuizBlock.qIndex % questionsData.length];
 
     let isCorrect = quizData.answers.some(ans => {
-        // userAnswer, şıklardan herhangi biriyle BİREBİR aynıysa VEYA şıkkı içeriyorsa kabul et
         if (userAnswer === ans) return true;
         if (userAnswer.includes(ans)) return true;
         return false;
