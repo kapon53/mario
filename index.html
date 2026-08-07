@@ -11,7 +11,7 @@
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box;
         user-select: none; touch-action: none;
-        overflow: hidden; /* Sayfanın kaymasını engeller */
+        overflow: hidden;
     }
     h1 { color: #ff003c; text-transform: uppercase; letter-spacing: 2px; margin: 5px 0 10px 0; font-size: 1.5em; text-shadow: 0 0 10px rgba(255, 0, 60, 0.6); }
     #game-container { position: relative; background: #0a0a0c; padding: 4px; border-radius: 8px; border: 2px solid #333; overflow: hidden; }
@@ -238,19 +238,20 @@ let reqId = null;
 let checkpoints = [];
 let checkpointIndex = 0;
 
+// CEVAPLAR İNGİLİZCE KARAKTERLERLE (ş->s, ı->i, ğ->g) TEMİZLENDİ
 const questionsData = [
     { q: "Sana resmi olarak ilk aşkım dediğim tarih?", answers: ["13 mart", "13.03", "13mart"], failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔" },
     { q: "Tartıştığımızda genellikle kim haklı olur? 🙄", answers: ["irem", "ben"], failMsg: "Daima sen haklısın, bunu bilmen lazımdı! 😂" },
     { q: "Kim daha düşürücü? 🫠", answers: ["kerem", "sen"], failMsg: "Bence bunu bir daha düşün... 😉" },
     { q: "Kim daha uykucu?", answers: ["irem", "ben"], failMsg: "Uykucu şirin kim biliyoruz... 😴" },
     { q: "Kim daha çok seven kişinin PLANLARINI BOZUYOR????????? 🤔", answers: ["irem", "ben"], failMsg: "İtiraf etsene planları kim bozuyor! 🧐" },
-    { q: "Sana aşkım deyip korktuğum tarih?", answers: ["14 şubat", "14.02", "sevgililer günü", "14subat"], failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱" },
-    { q: "Göndermelerin olduğu tartışma tarihi?", answers: ["yok", "-", "hiç", "böyle bir tarih yok", "hatırlamıyorum"], failMsg: "O kadar gönderme boşa mı gitti yani? 🙄" },
+    { q: "Sana aşkım deyip korktuğum tarih?", answers: ["14 subat", "14.02", "sevgililer gunu", "14subat"], failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱" },
+    { q: "Göndermelerin olduğu tartışma tarihi?", answers: ["yok", "-", "hic", "boyle bir tarih yok", "hatirlamiyorum"], failMsg: "O kadar gönderme boşa mı gitti yani? 🙄" },
     { q: "WP'ye geçtiğimiz tarih?", answers: ["1 nisan", "01.04", "1nisan"], failMsg: "O tarihi bileceksin... O kadar heyecanlanmıştık! 😤" },
     { q: "Kim numaralaşmak istedi? 🙄 (DÜNYANIN EN UTANÇ ANI)", answers: ["kerem", "sen"], failMsg: "O utanç anını başkasına yıkamazsın! 🫣" },
     { q: "Benim çok sevip (fav değil) senin HİÇ sevmediğin yemek?", answers: ["nohut"], failMsg: "Nasıl sevmezsin nohutu ya... Bilemedin! 😡" },
-    { q: "Senin bayıla bayıla yediğin, benim nefret ettiğim o 'Gıda Katliamı' yemek? 🤢🤮", answers: ["döner", "soslu", "soslu döner", "bol soslu döner"], failMsg: "O soslu döneri midesi alan tek kişi sensin! 🤮" },
-    { q: "Kurgu yaptığımızda çıktığımız date'de sen hangi tatlıyı yedin?", answers: ["fıstık", "sarma", "fıstık sarma"], failMsg: "Yediğin tatlıyı bile unuttun mu? İnanılmaz... 🍰" },
+    { q: "Senin bayıla bayıla yediğin, benim nefret ettiğim o 'Gıda Katliamı' yemek? 🤢🤮", answers: ["doner", "soslu", "soslu doner", "bol soslu doner"], failMsg: "O soslu döneri midesi alan tek kişi sensin! 🤮" },
+    { q: "Kurgu yaptığımızda çıktığımız date'de sen hangi tatlıyı yedin?", answers: ["fistik", "sarma", "fistik sarma"], failMsg: "Yediğin tatlıyı bile unuttun mu? İnanılmaz... 🍰" },
     { q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡", answers: ["fatih"], failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡" }
 ];
 let currentQuizBlock = null;
@@ -303,10 +304,10 @@ function drawMario(x, y, isJumping, direction, walkToggle) {
     ctx.restore();
 }
 
-/* ============== OYUNCU (DÜZELTİLDİ) ============== */
+/* ============== OYUNCU ============== */
 const player = {
     x: 50, y: 50, width: 24, height: 32,
-    vx: 0, vy: 0, speed: 4.5, jumpPower: -12.5, gravity: 0.65,
+    vx: 0, vy: 0, speed: 4.5, jumpPower: -13.0, gravity: 0.65,
     grounded: false, isDead: false, facingRight: true,
     lives: MAX_LIVES, walkTimer: 0, walkToggle: false, standingOn: null,
 
@@ -328,7 +329,6 @@ const player = {
             AudioEngine.jump();
         }
 
-        // DÜZELTME 2: Hareketli platform hızı entegrasyonu (Aşağı inerken sekmeyi önler)
         if (this.standingOn && this.standingOn.type === 'moving') {
             this.y += this.standingOn.vy;
         }
@@ -443,7 +443,7 @@ const player = {
     }
 };
 
-/* ============== SEVİYE OLUŞTURMA (DÜZELTİLDİ) ============== */
+/* ============== SEVİYE OLUŞTURMA ============== */
 const platforms = [];
 const enemies = [];
 const coins = [];
@@ -484,8 +484,8 @@ function createLevel() {
             platforms.push({ x: currentX, y: 420, width: 350, height: 50, type: 'ground' });
             platforms.push({ x: currentX + 420, y: 370, width: 64, height: 20, type: 'ground' });
             platforms.push({ x: currentX + 540, y: 420, width: 460, height: 50, type: 'ground' });
-            addQuizAndGate(currentX, currentX + 650, 220, shuffled[i % shuffled.length]);
-            platforms.push({ x: currentX + 618, y: 220, width: 32, height: 32, type: 'brick' });
+            addQuizAndGate(currentX, currentX + 650, 260, shuffled[i % shuffled.length]);
+            platforms.push({ x: currentX + 618, y: 260, width: 32, height: 32, type: 'brick' });
             enemies.push({ x: currentX + 800, y: 396, width: 24, height: 24, minX: currentX + 780, maxX: currentX + 970, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
             enemies.push({ x: currentX + 920, y: 396, width: 24, height: 24, minX: currentX + 900, maxX: currentX + 1060, vx: -2.0, alive: true, stompable: true, kind: 'goomba' });
         }
@@ -493,7 +493,7 @@ function createLevel() {
             platforms.push({ x: currentX, y: 420, width: 1000, height: 50, type: 'ground' });
             platforms.push({ x: currentX + 250, y: 360, width: 40, height: 60, type: 'pipe' });
             enemies.push({ x: currentX + 350, y: 396, width: 24, height: 24, minX: currentX + 300, maxX: currentX + 420, vx: -1, alive: true, stompable: true, kind: 'goomba' });
-            addQuizAndGate(currentX, currentX + 550, 220, shuffled[i % shuffled.length]);
+            addQuizAndGate(currentX, currentX + 550, 260, shuffled[i % shuffled.length]);
             enemies.push({ x: currentX + 800, y: 396, width: 24, height: 24, minX: currentX + 750, maxX: currentX + 970, vx: -2.8, alive: true, stompable: true, kind: 'goomba' });
             enemies.push({ x: currentX + 720, y: 396, width: 24, height: 24, minX: currentX + 690, maxX: currentX + 830, vx: -1.7, alive: true, stompable: true, kind: 'goomba' });
         }
@@ -547,9 +547,7 @@ function createLevel() {
     }
     platforms.push({ x: currentX, y: 420, width: 600, height: 50, type: 'ground' });
     
-    // DÜZELTME 1: Düşmanların başlangıç lokasyonlarını kayıt et (Öldüklerinde geri dönebilmeleri için)
     enemies.forEach(e => { e.startX = e.x; e.startY = e.y; });
-    
     updateProgressUI();
 }
 
@@ -576,7 +574,7 @@ function updateMovingPlatforms() {
     });
 }
 
-/* ============== QUIZ ============== */
+/* ============== QUIZ VE KUSURSUZ METİN ALGILAMA ============== */
 function triggerQuiz(blockInfo) {
     resetKeys();
     isPaused = true;
@@ -591,19 +589,32 @@ function triggerQuiz(blockInfo) {
 document.getElementById('quiz-submit').addEventListener('click', checkTypedAnswer);
 quizInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(); });
 
+// TÜRKÇE KARAKTERLERİ VE BÜYÜK/KÜÇÜK HARFLERİ KUSURSUZ OKUYAN SİSTEM
 function normalizeText(s) {
-    return s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim() : s.toLowerCase().trim();
+    let str = s.toLowerCase().trim();
+    // Klavyeden girilen tüm belalı Türkçe harfleri düz İngilizceye çevir
+    str = str.replace(/ç/g, 'c')
+             .replace(/ğ/g, 'g')
+             .replace(/ı/g, 'i')
+             .replace(/i̇/g, 'i') 
+             .replace(/ö/g, 'o')
+             .replace(/ş/g, 's')
+             .replace(/ü/g, 'u');
+    return str;
 }
 
 function checkTypedAnswer() {
     const userAnswer = normalizeText(quizInput.value);
-    if (userAnswer.length < 1) return;
+    
+    if (userAnswer.length < 1) return; // Boş basmayı engelle (Ama 1 harfli "-" işaretine izin ver!)
+
     const quizData = questionsData[currentQuizBlock.qIndex % questionsData.length];
 
     let isCorrect = quizData.answers.some(ans => {
-        const nAns = normalizeText(ans);
-        if (userAnswer.length < 2) return false;
-        return userAnswer === nAns || userAnswer.includes(nAns) || nAns.includes(userAnswer);
+        // userAnswer, şıklardan herhangi biriyle BİREBİR aynıysa VEYA şıkkı içeriyorsa kabul et
+        if (userAnswer === ans) return true;
+        if (userAnswer.includes(ans)) return true;
+        return false;
     });
 
     quizScreen.style.display = 'none';
@@ -752,7 +763,6 @@ function loseLife(reason) {
     }
 }
 
-// DÜZELTME 1 DEVAM: Öldüğünde tuğlaları ve düşmanları sıfırla
 document.getElementById('btn-continue').addEventListener('click', () => {
     lifeLostScreen.style.display = 'none';
     const cp = checkpoints[checkpointIndex];
@@ -760,11 +770,9 @@ document.getElementById('btn-continue').addEventListener('click', () => {
     player.isDead = false;
     isPaused = false;
     
-    // Bozulan platformları onar
     platforms.forEach(p => {
         if (p.type === 'crumble') { p.broken = false; p.crumbleTimer = 0; }
     });
-    // Ölen düşmanları yerlerine geri getir
     enemies.forEach(e => {
         e.alive = true;
         e.x = e.startX;
