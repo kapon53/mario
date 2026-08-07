@@ -154,18 +154,27 @@ let currentLevelIndex = 1;
 const questionsPerLevel = [3, 3, 3, 4]; 
 let globalQIndex = 0; 
 
-/* ============== SES MOTORU ============== */
+/* ============== SES MOTORU (Çökmeye Karşı Korumalı) ============== */
 const AudioEngine = {
     ctx: null, master: null,
     init() {
         if (this.ctx) return;
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this.master = this.ctx.createGain(); this.master.gain.value = 0.22; this.master.connect(this.ctx.destination);
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return; 
+            this.ctx = new AudioCtx();
+            this.master = this.ctx.createGain(); this.master.gain.value = 0.22; this.master.connect(this.ctx.destination);
+        } catch (e) {
+            console.warn("Ses motoru baslatilamadi, oyun sessiz modda devam edecek:", e);
+        }
     },
     tone(freq, dur, type = 'square', vol = 1, delay = 0) {
-        if (!this.ctx) return; const t0 = this.ctx.currentTime + delay; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, t0); gain.gain.setValueAtTime(vol, t0); gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-        osc.connect(gain); gain.connect(this.master); osc.start(t0); osc.stop(t0 + dur + 0.02);
+        if (!this.ctx) return; 
+        try {
+            const t0 = this.ctx.currentTime + delay; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, t0); gain.gain.setValueAtTime(vol, t0); gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+            osc.connect(gain); gain.connect(this.master); osc.start(t0); osc.stop(t0 + dur + 0.02);
+        } catch(e) {}
     },
     jump() { this.tone(520, 0.12, 'square', 0.5); this.tone(780, 0.1, 'square', 0.3, 0.05); },
     stomp() { this.tone(180, 0.15, 'square', 0.6); },
@@ -176,16 +185,28 @@ const AudioEngine = {
     powerup() { [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.1, 'square', 0.4, i * 0.08)); }
 };
 
-/* ============== GİRDİ ============== */
+/* ============== MOBİL UYUMLU BAĞLAYICILAR (Çarpışma & Tıklama Çözümü) ============== */
+function bindUIBtn(id, action) {
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.addEventListener('click', action);
+    btn.addEventListener('touchstart', action, {passive: false});
+}
+
 const keys = { right: false, left: false, up: false };
 function resetKeys() { keys.right = false; keys.left = false; keys.up = false; }
 function inputBlocked() { return quizScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex' || lifeLostScreen.style.display === 'flex' || startScreen.style.display === 'flex' || levelStartScreen.style.display === 'flex' || levelCompleteScreen.style.display === 'flex'; }
+
 window.addEventListener('keydown', (e) => { if (inputBlocked()) return; if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true; if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true; if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') { keys.up = true; e.preventDefault(); } });
 window.addEventListener('keyup', (e) => { if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false; if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false; if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false; });
+
+const bindControl = (elem, isDown) => {
+    const handler = e => { e.preventDefault(); if(elem.id === 'btn-left') keys.left = isDown; else if(elem.id === 'btn-right') keys.right = isDown; else keys.up = isDown; };
+    if(isDown) { elem.addEventListener('pointerdown', handler); elem.addEventListener('touchstart', handler, {passive: false}); }
+    else { elem.addEventListener('pointerup', handler); elem.addEventListener('touchend', handler); elem.addEventListener('pointercancel', handler); elem.addEventListener('touchcancel', handler); }
+};
 const btnLeft = document.getElementById('btn-left'); const btnRight = document.getElementById('btn-right'); const btnJump = document.getElementById('btn-jump');
-btnLeft.addEventListener('pointerdown', e => { e.preventDefault(); keys.left = true; }); btnLeft.addEventListener('pointerup', e => { e.preventDefault(); keys.left = false; }); btnLeft.addEventListener('pointercancel', e => { e.preventDefault(); keys.left = false; });
-btnRight.addEventListener('pointerdown', e => { e.preventDefault(); keys.right = true; }); btnRight.addEventListener('pointerup', e => { e.preventDefault(); keys.right = false; }); btnRight.addEventListener('pointercancel', e => { e.preventDefault(); keys.right = false; });
-btnJump.addEventListener('pointerdown', e => { e.preventDefault(); keys.up = true; }); btnJump.addEventListener('pointerup', e => { e.preventDefault(); keys.up = false; }); btnJump.addEventListener('pointercancel', e => { e.preventDefault(); keys.up = false; });
+bindControl(btnLeft, true); bindControl(btnLeft, false); bindControl(btnRight, true); bindControl(btnRight, false); bindControl(btnJump, true); bindControl(btnJump, false);
 
 /* ============== OYUN DURUMU ============== */
 let score = 0; let cameraX = 0; let isPaused = false; let isStarted = false; let reqId = null;
@@ -229,11 +250,11 @@ function drawMario(x, y, isJumping, direction, walkToggle) {
 }
 
 function drawCloud(x, y) {
-    if(currentLevelIndex % 2 === 0) return; // Gece/Yeraltı bölümünde bulut yok
+    if(currentLevelIndex % 2 === 0) return; 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.beginPath(); ctx.arc(x + 20, y + 15, 15, 0, Math.PI * 2); ctx.arc(x + 45, y + 5, 20, 0, Math.PI * 2); ctx.arc(x + 70, y + 15, 15, 0, Math.PI * 2); ctx.fillRect(x + 20, y + 5, 50, 25); ctx.fill();
 }
 function drawHill(x, y, size) {
-    if(currentLevelIndex % 2 === 0) return; // Gece/Yeraltı bölümünde tepe yok
+    if(currentLevelIndex % 2 === 0) return; 
     ctx.fillStyle = '#00a800'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + size / 2, y - size / 1.5); ctx.lineTo(x + size, y); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = '#00d000'; ctx.beginPath(); ctx.moveTo(x + 10, y); ctx.lineTo(x + size / 2, y - size / 1.5 + 10); ctx.lineTo(x + size / 2 + 10, y - size / 1.5 + 10); ctx.lineTo(x + 25, y); ctx.fill();
 }
@@ -338,7 +359,7 @@ const player = {
     draw() { if (!this.isDead) drawMario(this.x, this.y, !this.grounded, this.facingRight ? 1 : -1, this.walkToggle); }
 };
 
-/* ============== SEVİYE OLUŞTURMA (BÖLÜM SİSTEMİ) ============== */
+/* ============== SEVİYE OLUŞTURMA ============== */
 const platforms = []; const enemies = []; const healthHearts = [];
 
 function addQuizAndGate(cx, qx, qy, qIndex) {
@@ -349,34 +370,24 @@ function addQuizAndGate(cx, qx, qy, qIndex) {
 function createLevel() {
     platforms.length = 0; enemies.length = 0; healthHearts.length = 0; checkpoints = []; checkpointIndex = 0;
     
-    // TEMA AYARLARI 
-    if(currentLevelIndex % 2 === 0) {
-        canvas.style.backgroundColor = '#000000'; 
-    } else {
-        canvas.style.backgroundColor = '#5c94fc'; 
-    }
+    if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } 
+    else { canvas.style.backgroundColor = '#5c94fc'; }
 
     let cx = 0;
     let questionsForThisLevel = questionsPerLevel[currentLevelIndex - 1]; 
-    let segmentsThisLevel = questionsForThisLevel * 2; // Bölümleri iki kat uzun yapıyoruz (Açık Parkur)
+    let segmentsThisLevel = questionsForThisLevel * 2; 
 
     for (let i = 0; i < segmentsThisLevel; i++) {
         checkpoints.push({ x: cx + 20, y: 50 });
-        let type = i % 4; 
-        
-        // Sadece tek sayılı segmentlere (1, 3, 5...) soru bloğu ve kapı koy. Çift sayılar düz parkur olsun!
+        let type = globalQIndex % 4; 
         let putQuestion = (i % 2 === 1); 
 
         if (type === 0) {
             platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
             platforms.push({ x: cx + 300, y: 260, width: 32, height: 32, type: 'brick' });
             
-            if (putQuestion) {
-                addQuizAndGate(cx, cx + 332, 260, shuffledQuestions[globalQIndex]);
-                globalQIndex++;
-            } else {
-                platforms.push({ x: cx + 332, y: 260, width: 32, height: 32, type: 'brick' });
-            }
+            if (putQuestion) { addQuizAndGate(cx, cx + 332, 260, shuffledQuestions[globalQIndex]); globalQIndex++; } 
+            else { platforms.push({ x: cx + 332, y: 260, width: 32, height: 32, type: 'brick' }); }
 
             platforms.push({ x: cx + 364, y: 260, width: 32, height: 32, type: 'brick' });
             enemies.push({ x: cx + 500, y: 396, width: 24, height: 24, minX: cx + 450, maxX: cx + 650, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
@@ -389,12 +400,8 @@ function createLevel() {
             platforms.push({ x: cx + 450, y: 300, width: 48, height: 120, type: 'pipe' });
             enemies.push({ kind: 'piranha', x: cx + 458, width: 32, height: 40, startY: 300, timer: 1.5, alive: true, stompable: false });
             
-            if (putQuestion) {
-                addQuizAndGate(cx, cx + 700, 200, shuffledQuestions[globalQIndex]);
-                globalQIndex++;
-            } else {
-                platforms.push({ x: cx + 700, y: 200, width: 32, height: 32, type: 'brick' });
-            }
+            if (putQuestion) { addQuizAndGate(cx, cx + 700, 200, shuffledQuestions[globalQIndex]); globalQIndex++; } 
+            else { platforms.push({ x: cx + 700, y: 200, width: 32, height: 32, type: 'brick' }); }
 
             enemies.push({ x: cx + 850, y: 396, width: 24, height: 24, minX: cx + 750, maxX: cx + 1000, vx: -2, alive: true, stompable: true, kind: 'goomba' });
         }
@@ -403,12 +410,8 @@ function createLevel() {
             platforms.push({ x: cx + 400, y: 360, width: 80, height: 20, type: 'moving', minY: 150, maxY: 380, vy: -1.5 });
             platforms.push({ x: cx + 600, y: 260, width: 32, height: 32, type: 'brick' });
             
-            if (putQuestion) {
-                addQuizAndGate(cx, cx + 632, 260, shuffledQuestions[globalQIndex]);
-                globalQIndex++;
-            } else {
-                platforms.push({ x: cx + 632, y: 260, width: 32, height: 32, type: 'brick' });
-            }
+            if (putQuestion) { addQuizAndGate(cx, cx + 632, 260, shuffledQuestions[globalQIndex]); globalQIndex++; } 
+            else { platforms.push({ x: cx + 632, y: 260, width: 32, height: 32, type: 'brick' }); }
 
             platforms.push({ x: cx + 664, y: 260, width: 32, height: 32, type: 'brick' });
             platforms.push({ x: cx + 800, y: 420, width: 400, height: 50, type: 'ground' });
@@ -417,12 +420,8 @@ function createLevel() {
             platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
             platforms.push({ x: cx + 200, y: 260, width: 32, height: 32, type: 'brick' }); platforms.push({ x: cx + 232, y: 260, width: 32, height: 32, type: 'brick' }); platforms.push({ x: cx + 264, y: 260, width: 32, height: 32, type: 'brick' });
             
-            if (putQuestion) {
-                addQuizAndGate(cx, cx + 550, 150, shuffledQuestions[globalQIndex]);
-                globalQIndex++;
-            } else {
-                platforms.push({ x: cx + 550, y: 150, width: 32, height: 32, type: 'brick' });
-            }
+            if (putQuestion) { addQuizAndGate(cx, cx + 550, 150, shuffledQuestions[globalQIndex]); globalQIndex++; } 
+            else { platforms.push({ x: cx + 550, y: 150, width: 32, height: 32, type: 'brick' }); }
 
             platforms.push({ x: cx + 550, y: 280, width: 32, height: 32, type: 'solid' }); 
             enemies.push({ x: cx + 300, y: 396, width: 24, height: 24, minX: cx + 200, maxX: cx + 500, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
@@ -453,7 +452,7 @@ function updateMovingPlatforms() {
     platforms.forEach(p => { if (p.type === 'moving') { p.y += p.vy; if (p.y <= p.minY || p.y >= p.maxY) p.vy *= -1; } });
 }
 
-/* ============== BÖLÜM GEÇİŞ FONKSİYONLARI ============== */
+/* ============== BÖLÜM GEÇİŞ VE ARAYÜZ FONKSİYONLARI ============== */
 function startLevelTransition() {
     startScreen.style.display = 'none';
     levelCompleteScreen.style.display = 'none';
@@ -468,16 +467,35 @@ function startLevelTransition() {
     }, 2000); 
 }
 
-document.getElementById('start-btn').addEventListener('click', () => { 
-    AudioEngine.init(); if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume(); AudioEngine.startMusic(); 
+bindUIBtn('start-btn', (e) => {
+    e.preventDefault();
+    if (isStarted) return;
+    AudioEngine.init();
+    if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') { try { AudioEngine.ctx.resume(); } catch(err){} }
+    try { AudioEngine.startMusic(); } catch(err){}
     startLevelTransition();
 });
 
-document.getElementById('btn-next-level').addEventListener('click', () => {
+bindUIBtn('btn-next-level', (e) => {
+    e.preventDefault();
     currentLevelIndex++;
     player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.levelFinished = false;
     createLevel();
     startLevelTransition();
+});
+
+bindUIBtn('btn-continue', (e) => {
+    e.preventDefault();
+    lifeLostScreen.style.display = 'none'; const cp = checkpoints[checkpointIndex];
+    player.x = cp.x; player.y = cp.y; player.vx = 0; player.vy = 0; player.isDead = false; isPaused = false;
+    platforms.forEach(p => { if (p.type === 'brick') p.destroyed = false; });
+    enemies.forEach(e => { e.alive = true; e.x = e.startX; e.y = e.startY; if(e.kind === 'piranha') e.timer = 0; });
+});
+
+bindUIBtn('btn-restart', (e) => {
+    e.preventDefault();
+    if (document.getElementById('btn-restart').innerText === "SENİ ÇOK SEVİYORUM!") return;
+    fullRestart();
 });
 
 
@@ -488,8 +506,9 @@ function triggerQuiz(blockInfo) {
     document.getElementById('quiz-question').innerText = quizData.q;
     quizInput.value = ''; quizScreen.style.display = 'flex'; requestAnimationFrame(() => quizInput.focus());
 }
-document.getElementById('quiz-submit').addEventListener('click', checkTypedAnswer);
-quizInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(); });
+
+bindUIBtn('quiz-submit', (e) => { e.preventDefault(); checkTypedAnswer(); });
+quizInput.addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); checkTypedAnswer(); }});
 
 function normalizeText(s) { return s.toLowerCase().trim().replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/i̇/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u'); }
 
@@ -589,30 +608,16 @@ function drawGame() {
 function updateScore() { document.getElementById('score').innerText = String(score).padStart(6, '0'); }
 function updateHeartsUI() { document.getElementById('hearts').innerText = '❤x' + player.lives; }
 
-function loseLife(reason) {
-    if (player.isDead) return; player.isDead = true; resetKeys(); AudioEngine.lifeLost();
-    player.lives = Math.max(0, player.lives - 1); updateHeartsUI();
-    if (player.lives > 0) {
-        document.getElementById('ll-title').innerText = reason; document.getElementById('ll-sub').innerText = `${player.lives} canın kaldı. Bu bölüme kaldığın yerden devam ediyorsun.`; lifeLostScreen.style.display = 'flex';
-    } else {
-        document.getElementById('go-title').innerText = reason + "\n\nCANLARIN BİTTİ! HER ŞEY BAŞA SARDI..."; document.getElementById('go-title').style.color = "#ff003c"; document.getElementById('btn-restart').innerText = "EN BAŞA DÖN"; gameOverScreen.style.display = 'flex';
-    }
-}
-document.getElementById('btn-continue').addEventListener('click', () => {
-    lifeLostScreen.style.display = 'none'; const cp = checkpoints[checkpointIndex];
-    player.x = cp.x; player.y = cp.y; player.vx = 0; player.vy = 0; player.isDead = false; isPaused = false;
-    platforms.forEach(p => { if (p.type === 'brick') p.destroyed = false; });
-    enemies.forEach(e => { e.alive = true; e.x = e.startX; e.y = e.startY; if(e.kind === 'piranha') e.timer = 0; });
-});
-function winGame() {
-    if (player.isDead) return; resetKeys(); player.isDead = true; AudioEngine.fanfare();
-    document.getElementById('go-title').innerText = "VEEE FİNAL! 💖\nTÜM SORULARI GEÇTİN!"; document.getElementById('go-title').style.color = "#00ff66"; document.getElementById('btn-restart').innerText = "SENİ ÇOK SEVİYORUM!"; gameOverScreen.style.display = 'flex';
-}
 function fullRestart() {
     resetKeys(); player.lives = MAX_LIVES; player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.isDead = false; player.levelFinished = false; isPaused = false; score = 0;
     currentLevelIndex = 1; globalQIndex = 0; initQuestions(); updateScore(); updateHeartsUI(); createLevel(); gameOverScreen.style.display = 'none'; startLevelTransition();
 }
-document.getElementById('btn-restart').addEventListener('click', () => { if (document.getElementById('btn-restart').innerText === "SENİ ÇOK SEVİYORUM!") return; fullRestart(); });
+
+function winGame() {
+    if (player.isDead) return; resetKeys(); player.isDead = true; 
+    try { AudioEngine.fanfare(); } catch(e){}
+    document.getElementById('go-title').innerText = "VEEE FİNAL! 💖\nTÜM SORULARI GEÇTİN!"; document.getElementById('go-title').style.color = "#00ff66"; document.getElementById('btn-restart').innerText = "SENİ ÇOK SEVİYORUM!"; gameOverScreen.style.display = 'flex';
+}
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
