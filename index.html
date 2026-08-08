@@ -380,7 +380,15 @@ const player = {
                         this.y = p.y + p.height; this.vy = 0;
                         if (p.type === 'quizblock' && !p.hit && !isPaused) { triggerQuiz(p); } 
                         else if (p.type === 'brick') { p.destroyed = true; score += 50; updateScore(); AudioEngine.stomp(); }
-                        else if (p.type === 'coinblock' && !p.hit) { p.hit = true; addCoin(p.x, p.y); }
+                        else if (p.type === 'coinblock' && !p.hit) {
+                            if (p.hitsLeft === undefined) p.hitsLeft = 1; 
+                            
+                            if (p.hitsLeft > 0) {
+                                addCoin(p.x, p.y);
+                                p.hitsLeft--;
+                                if (p.hitsLeft <= 0) p.hit = true; 
+                            }
+                        }
                     }
                     this.vy = 0;
                 }
@@ -402,8 +410,8 @@ function addQuizAndGate(cx, qx, qy, qIndex) {
 function createLevel() {
     platforms.length = 0; enemies.length = 0; healthHearts.length = 0; checkpoints = []; checkpointIndex = 0;
     
-    // YENİ TEST KUTUSU BURADA OLMALI
-    platforms.push({ x: 350, y: 260, width: 32, height: 32, type: 'coinblock', hit: false });
+    // YENİ TEST KUTUSU (Yüksekliği 310'a indirildi ve 5 altın hakkı verildi)
+    platforms.push({ x: 350, y: 310, width: 32, height: 32, type: 'coinblock', hit: false, hitsLeft: 5 });
     
     if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } 
     else { canvas.style.backgroundColor = '#5c94fc'; }
@@ -622,19 +630,30 @@ function drawGame() {
             ctx.fillStyle = '#008800'; ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); 
             ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 1, p.y, 12, 20); 
             ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
-        } else if (p.type === 'coinblock') {
-            ctx.fillStyle = p.hit ? '#8b4513' : '#f8b800'; 
-            ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-            if (!p.hit) { 
-                ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); 
+        } else if (p.type === 'coinblock' || p.type === 'quizblock') {
+            if (p.hit) {
+                ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.width, p.height);
+                ctx.fillStyle = '#000'; 
+                ctx.fillRect(p.x + 4, p.y + 4, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + 4, 4, 4);
+                ctx.fillRect(p.x + 4, p.y + p.height - 8, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + p.height - 8, 4, 4);
             } else {
-                ctx.fillStyle = '#000'; ctx.fillRect(p.x + 14, p.y + 14, 4, 4);
+                ctx.fillStyle = p.type === 'quizblock' ? '#b026ff' : '#f8b800'; 
+                ctx.fillRect(p.x, p.y, p.width, p.height);
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.width, p.height);
+                
+                ctx.fillStyle = '#000';
+                ctx.fillRect(p.x + 4, p.y + 4, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + 4, 4, 4);
+                ctx.fillRect(p.x + 4, p.y + p.height - 8, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + p.height - 8, 4, 4);
+
+                ctx.fillStyle = '#c84c0c'; 
+                ctx.fillRect(p.x + 10, p.y + 8, 12, 4); ctx.fillRect(p.x + 18, p.y + 12, 4, 6);
+                ctx.fillRect(p.x + 14, p.y + 18, 4, 4); ctx.fillRect(p.x + 14, p.y + 24, 4, 4);
+                
+                ctx.fillStyle = '#fff'; 
+                ctx.fillRect(p.x + 8, p.y + 6, 12, 4); ctx.fillRect(p.x + 16, p.y + 10, 4, 6);
+                ctx.fillRect(p.x + 12, p.y + 16, 4, 4); ctx.fillRect(p.x + 12, p.y + 22, 4, 4);
             }
-        } else if (p.type === 'quizblock') {
-            ctx.fillStyle = p.hit ? (currentLevelIndex % 2 === 0 ? '#0000a8' : '#c84c0c') : '#b026ff'; ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-            if (!p.hit) { ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); }
         } else if (p.type === 'moving') {
             ctx.fillStyle = '#ffd400'; ctx.fillRect(p.x, p.y, p.width, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
         } else if (p.type === 'gate' && !p.linked.hit) {
