@@ -155,6 +155,11 @@ let currentLevelIndex = 1;
 const questionsPerLevel = [3, 3, 3, 4]; 
 let globalQIndex = 0; 
 
+let score = 0; let cameraX = 0; let isPaused = false; let isStarted = false; let reqId = null;
+let checkpoints = []; let checkpointIndex = 0; let shuffledQuestions = [];
+let coinCount = 0; 
+const activeCoins = [];
+
 /* ============== SES MOTORU (Çökmeye Karşı Korumalı) ============== */
 const AudioEngine = {
     ctx: null, master: null,
@@ -209,29 +214,8 @@ const bindControl = (elem, isDown) => {
 const btnLeft = document.getElementById('btn-left'); const btnRight = document.getElementById('btn-right'); const btnJump = document.getElementById('btn-jump');
 bindControl(btnLeft, true); bindControl(btnLeft, false); bindControl(btnRight, true); bindControl(btnRight, false); bindControl(btnJump, true); bindControl(btnJump, false);
 
-/* ============== OYUN DURUMU ============== */
-let score = 0; let cameraX = 0; let isPaused = false; let isStarted = false; let reqId = null;
-let checkpoints = []; let checkpointIndex = 0; let shuffledQuestions = []; let coinCount = 0; 
-const activeCoins = [];
-
-
-const questionsData = [
-    { q: "Sana resmi olarak ilk aşkım dediğim tarih?", answers: ["13 mart", "13.03", "13mart"], failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔" },
-    { q: "Tartıştığımızda genellikle kim haklı olur? 🙄", answers: ["irem", "ben"], failMsg: "Daima sen haklısın, bunu bilmen lazımdı! 😂" },
-    { q: "Kim daha düşürücü? 🫠", answers: ["kerem", "sen"], failMsg: "Bence bunu bir daha düşün... 😉" },
-    { q: "Kim daha uykucu?", answers: ["irem", "ben"], failMsg: "Uykucu şirin kim biliyoruz... 😴" },
-    { q: "Kim daha çok seven kişinin PLANLARINI BOZUYOR????????? 🤔", answers: ["irem", "ben"], failMsg: "İtiraf etsene planları kim bozuyor! 🧐" },
-    { q: "Sana aşkım deyip korktuğum tarih?", answers: ["14 subat", "14.02", "sevgililer gunu", "14subat"], failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱" },
-    { q: "Göndermelerin olduğu tartışma tarihi?", answers: ["yok", "-", "hic", "boyle bir tarih yok", "hatirlamiyorum"], failMsg: "O kadar gönderme boşa mı gitti yani? 🙄" },
-    { q: "WP'ye geçtiğimiz tarih?", answers: ["1 nisan", "01.04", "1nisan"], failMsg: "O tarihi bileceksin... O kadar heyecanlanmıştık! 😤" },
-    { q: "Kim numaralaşmak istedi? 🙄 (DÜNYANIN EN UTANÇ ANI)", answers: ["kerem", "sen"], failMsg: "O utanç anını başkasına yıkamazsın! 🫣" },
-    { q: "Benim çok sevip (fav değil) senin HİÇ sevmediğin yemek?", answers: ["nohut"], failMsg: "Nasıl sevmezsin nohutu ya... Bilemedin! 😡" },
-    { q: "Senin bayıla bayıla yediğin, benim nefret ettiğim o 'Gıda Katliamı' yemek? 🤢🤮", answers: ["doner", "soslu", "soslu doner", "bol soslu doner"], failMsg: "O soslu döneri midesi alan tek kişi sensin! 🤮" },
-    { q: "Kurgu yaptığımızda çıktığımız date'de sen hangi tatlıyı yedin?", answers: ["fistik", "sarma", "fistik sarma"], failMsg: "Yediğin tatlıyı bile unuttun mu? İnanılmaz... 🍰" },
-    { q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡", answers: ["fatih"], failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡" }
-];
-let currentQuizBlock = null;
-    function addCoin(x, y) {
+/* ============== YENİ ALTIN (COIN) SİSTEMİ ============== */
+function addCoin(x, y) {
     coinCount++; score += 10; updateScore();
     
     if (coinCount >= 100) {
@@ -259,6 +243,22 @@ function updateActiveCoins() {
     }
 }
 
+const questionsData = [
+    { q: "Sana resmi olarak ilk aşkım dediğim tarih?", answers: ["13 mart", "13.03", "13mart"], failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔" },
+    { q: "Tartıştığımızda genellikle kim haklı olur? 🙄", answers: ["irem", "ben"], failMsg: "Daima sen haklısın, bunu bilmen lazımdı! 😂" },
+    { q: "Kim daha düşürücü? 🫠", answers: ["kerem", "sen"], failMsg: "Bence bunu bir daha düşün... 😉" },
+    { q: "Kim daha uykucu?", answers: ["irem", "ben"], failMsg: "Uykucu şirin kim biliyoruz... 😴" },
+    { q: "Kim daha çok seven kişinin PLANLARINI BOZUYOR????????? 🤔", answers: ["irem", "ben"], failMsg: "İtiraf etsene planları kim bozuyor! 🧐" },
+    { q: "Sana aşkım deyip korktuğum tarih?", answers: ["14 subat", "14.02", "sevgililer gunu", "14subat"], failMsg: "Korkudan titrediğim o günü nasıl bilmezsin! 😱" },
+    { q: "Göndermelerin olduğu tartışma tarihi?", answers: ["yok", "-", "hic", "boyle bir tarih yok", "hatirlamiyorum"], failMsg: "O kadar gönderme boşa mı gitti yani? 🙄" },
+    { q: "WP'ye geçtiğimiz tarih?", answers: ["1 nisan", "01.04", "1nisan"], failMsg: "O tarihi bileceksin... O kadar heyecanlanmıştık! 😤" },
+    { q: "Kim numaralaşmak istedi? 🙄 (DÜNYANIN EN UTANÇ ANI)", answers: ["kerem", "sen"], failMsg: "O utanç anını başkasına yıkamazsın! 🫣" },
+    { q: "Benim çok sevip (fav değil) senin HİÇ sevmediğin yemek?", answers: ["nohut"], failMsg: "Nasıl sevmezsin nohutu ya... Bilemedin! 😡" },
+    { q: "Senin bayıla bayıla yediğin, benim nefret ettiğim o 'Gıda Katliamı' yemek? 🤢🤮", answers: ["doner", "soslu", "soslu doner", "bol soslu doner"], failMsg: "O soslu döneri midesi alan tek kişi sensin! 🤮" },
+    { q: "Kurgu yaptığımızda çıktığımız date'de sen hangi tatlıyı yedin?", answers: ["fistik", "sarma", "fistik sarma"], failMsg: "Yediğin tatlıyı bile unuttun mu? İnanılmaz... 🍰" },
+    { q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡", answers: ["fatih"], failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡" }
+];
+let currentQuizBlock = null;
 
 function initQuestions() {
     shuffledQuestions = questionsData.map((_, i) => i);
@@ -379,12 +379,8 @@ const player = {
                     } else if (this.vy < 0) {
                         this.y = p.y + p.height; this.vy = 0;
                         if (p.type === 'quizblock' && !p.hit && !isPaused) { triggerQuiz(p); } 
-                        else if (p.type === 'brick') { p.destroyed = true; score += 50; updateScore(); AudioEngine.stomp(); }                    
-                        else if (p.type === 'coinblock' && !p.hit) {
-                        p.hit = true;
-                        addCoin(p.x, p.y);
-                    }
-
+                        else if (p.type === 'brick') { p.destroyed = true; score += 50; updateScore(); AudioEngine.stomp(); }
+                        else if (p.type === 'coinblock' && !p.hit) { p.hit = true; addCoin(p.x, p.y); }
                     }
                     this.vy = 0;
                 }
@@ -404,9 +400,10 @@ function addQuizAndGate(cx, qx, qy, qIndex) {
 }
 
 function createLevel() {
-   platforms.push({ x: 350, y: 260, width: 32, height: 32, type: 'coinblock', hit: false });
-
     platforms.length = 0; enemies.length = 0; healthHearts.length = 0; checkpoints = []; checkpointIndex = 0;
+    
+    // YENİ TEST KUTUSU BURADA OLMALI
+    platforms.push({ x: 350, y: 260, width: 32, height: 32, type: 'coinblock', hit: false });
     
     if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } 
     else { canvas.style.backgroundColor = '#5c94fc'; }
@@ -625,8 +622,7 @@ function drawGame() {
             ctx.fillStyle = '#008800'; ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); 
             ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 1, p.y, 12, 20); 
             ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
-        } else if (p.type === 'quizblock') {
-                    else if (p.type === 'coinblock') {
+        } else if (p.type === 'coinblock') {
             ctx.fillStyle = p.hit ? '#8b4513' : '#f8b800'; 
             ctx.fillRect(p.x, p.y, p.width, p.height);
             ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
@@ -635,8 +631,7 @@ function drawGame() {
             } else {
                 ctx.fillStyle = '#000'; ctx.fillRect(p.x + 14, p.y + 14, 4, 4);
             }
-        }
-
+        } else if (p.type === 'quizblock') {
             ctx.fillStyle = p.hit ? (currentLevelIndex % 2 === 0 ? '#0000a8' : '#c84c0c') : '#b026ff'; ctx.fillRect(p.x, p.y, p.width, p.height);
             ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
             if (!p.hit) { ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); }
@@ -647,13 +642,13 @@ function drawGame() {
         }
     });
 
-    healthHearts.forEach(h => {
-          activeCoins.forEach(c => {
+    activeCoins.forEach(c => {
         ctx.save(); ctx.globalAlpha = Math.max(0, c.opacity); ctx.fillStyle = '#ffff00'; 
         ctx.beginPath(); ctx.ellipse(c.x + 8, c.y + 8, 8, 12, 0, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = '#d69e00'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
     });
 
+    healthHearts.forEach(h => {
         if (h.collected) return;
         ctx.fillStyle = '#ff003c'; ctx.font = '24px Arial'; ctx.fillText('❤', h.x, h.y + 10 * Math.sin(Date.now() / 200)); 
     });
@@ -679,9 +674,11 @@ function animate() {
     let targetCamX = player.x - canvas.width / 2 + player.width / 2; if (targetCamX < 0) targetCamX = 0;
     const maxCam = checkpoints.length ? checkpoints[checkpoints.length - 1].x + 400 - canvas.width / 2 : 0; if (targetCamX > maxCam) targetCamX = maxCam;
     cameraX = targetCamX;
-        updateActiveCoins();
-
+    
+    updateActiveCoins();
+    
     ctx.save(); ctx.translate(-cameraX, 0); drawGame(); updateEnemies(); updateMovingPlatforms(); player.update(); player.draw(); ctx.restore();
+    
     if (reqId) cancelAnimationFrame(reqId); reqId = requestAnimationFrame(animate);
 }
 
