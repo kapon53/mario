@@ -92,6 +92,7 @@
     <div id="ui-layer">
         <div class="ui-col"><span>İREM</span><span id="score">000000</span></div>
         <div class="ui-col"><span>BÖLÜM</span><span id="world-label">1-1</span></div>
+        <div class="ui-col"><span>ALTIN</span><span id="coin-ui">🪙 x00</span></div>
         <div class="ui-col"><span>CAN</span><span id="hearts">❤x3</span></div>
     </div>
     
@@ -210,7 +211,9 @@ bindControl(btnLeft, true); bindControl(btnLeft, false); bindControl(btnRight, t
 
 /* ============== OYUN DURUMU ============== */
 let score = 0; let cameraX = 0; let isPaused = false; let isStarted = false; let reqId = null;
-let checkpoints = []; let checkpointIndex = 0; let shuffledQuestions = [];
+let checkpoints = []; let checkpointIndex = 0; let shuffledQuestions = []; let coinCount = 0; 
+const activeCoins = [];
+
 
 const questionsData = [
     { q: "Sana resmi olarak ilk aşkım dediğim tarih?", answers: ["13 mart", "13.03", "13mart"], failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔" },
@@ -228,6 +231,34 @@ const questionsData = [
     { q: "Benim en nefret ettiğim kişi (sen bayılırsın bu kişiye) 😡", answers: ["fatih"], failMsg: "O isme tahammülüm yok, cevabı nasıl bilemezsin! 😡" }
 ];
 let currentQuizBlock = null;
+    function addCoin(x, y) {
+    coinCount++; score += 10; updateScore();
+    
+    if (coinCount >= 100) {
+        coinCount = 0; 
+        if(player.lives < MAX_LIVES) {
+            player.lives++;
+            updateHeartsUI(); 
+        }
+        AudioEngine.powerup(); 
+    }
+    
+    document.getElementById('coin-ui').innerText = '🪙 x' + String(coinCount).padStart(2, '0');
+    activeCoins.push({ x: x + 8, y: y - 16, vy: -8, opacity: 1 });
+    AudioEngine.jump(); 
+}
+
+function updateActiveCoins() {
+    if (isPaused || !isStarted) return;
+    for (let i = activeCoins.length - 1; i >= 0; i--) {
+        let c = activeCoins[i];
+        c.y += c.vy; 
+        c.vy += 0.8; 
+        if (c.vy > 0) c.opacity -= 0.12; 
+        if (c.opacity <= 0) activeCoins.splice(i, 1); 
+    }
+}
+
 
 function initQuestions() {
     shuffledQuestions = questionsData.map((_, i) => i);
@@ -348,7 +379,12 @@ const player = {
                     } else if (this.vy < 0) {
                         this.y = p.y + p.height; this.vy = 0;
                         if (p.type === 'quizblock' && !p.hit && !isPaused) { triggerQuiz(p); } 
-                        else if (p.type === 'brick') { p.destroyed = true; score += 50; updateScore(); AudioEngine.stomp(); }
+                        else if (p.type === 'brick') { p.destroyed = true; score += 50; updateScore(); AudioEngine.stomp(); }                    
+                        else if (p.type === 'coinblock' && !p.hit) {
+                        p.hit = true;
+                        addCoin(p.x, p.y);
+                    }
+
                     }
                     this.vy = 0;
                 }
@@ -368,6 +404,8 @@ function addQuizAndGate(cx, qx, qy, qIndex) {
 }
 
 function createLevel() {
+   platforms.push({ x: 350, y: 260, width: 32, height: 32, type: 'coinblock', hit: false });
+
     platforms.length = 0; enemies.length = 0; healthHearts.length = 0; checkpoints = []; checkpointIndex = 0;
     
     if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } 
@@ -588,6 +626,17 @@ function drawGame() {
             ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 1, p.y, 12, 20); 
             ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
         } else if (p.type === 'quizblock') {
+                    else if (p.type === 'coinblock') {
+            ctx.fillStyle = p.hit ? '#8b4513' : '#f8b800'; 
+            ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
+            if (!p.hit) { 
+                ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); 
+            } else {
+                ctx.fillStyle = '#000'; ctx.fillRect(p.x + 14, p.y + 14, 4, 4);
+            }
+        }
+
             ctx.fillStyle = p.hit ? (currentLevelIndex % 2 === 0 ? '#0000a8' : '#c84c0c') : '#b026ff'; ctx.fillRect(p.x, p.y, p.width, p.height);
             ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
             if (!p.hit) { ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); }
@@ -599,6 +648,12 @@ function drawGame() {
     });
 
     healthHearts.forEach(h => {
+          activeCoins.forEach(c => {
+        ctx.save(); ctx.globalAlpha = Math.max(0, c.opacity); ctx.fillStyle = '#ffff00'; 
+        ctx.beginPath(); ctx.ellipse(c.x + 8, c.y + 8, 8, 12, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#d69e00'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    });
+
         if (h.collected) return;
         ctx.fillStyle = '#ff003c'; ctx.font = '24px Arial'; ctx.fillText('❤', h.x, h.y + 10 * Math.sin(Date.now() / 200)); 
     });
@@ -624,6 +679,8 @@ function animate() {
     let targetCamX = player.x - canvas.width / 2 + player.width / 2; if (targetCamX < 0) targetCamX = 0;
     const maxCam = checkpoints.length ? checkpoints[checkpoints.length - 1].x + 400 - canvas.width / 2 : 0; if (targetCamX > maxCam) targetCamX = maxCam;
     cameraX = targetCamX;
+        updateActiveCoins();
+
     ctx.save(); ctx.translate(-cameraX, 0); drawGame(); updateEnemies(); updateMovingPlatforms(); player.update(); player.draw(); ctx.restore();
     if (reqId) cancelAnimationFrame(reqId); reqId = requestAnimationFrame(animate);
 }
