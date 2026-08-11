@@ -19,15 +19,15 @@
     canvas { background-color: #5c94fc; display: block; border-radius: 4px; image-rendering: pixelated; touch-action: none; }
 
     #mobile-controls { display: flex; justify-content: space-between; width: 100%; max-width: 600px; margin-top: 20px; padding: 0 10px; box-sizing: border-box; }
-    .d-pad { display: flex; gap: 15px; }
+    .d-pad { display: flex; gap: 10px; }
     .m-btn {
         background: rgba(255, 255, 255, 0.1); border: 2px solid #fff; color: #fff;
-        font-size: 24px; width: 60px; height: 60px; border-radius: 50%;
+        font-size: 20px; width: 55px; height: 55px; border-radius: 50%;
         font-weight: bold; display: flex; align-items: center; justify-content: center;
         cursor: pointer; user-select: none; touch-action: manipulation;
     }
     .m-btn:active { background: #fff; color: #000; transform: scale(0.9); }
-    .btn-action { background: rgba(255, 0, 60, 0.2); border-color: #ff003c; color: #ff003c; width: 70px; height: 70px; }
+    .btn-action { background: rgba(255, 0, 60, 0.2); border-color: #ff003c; color: #ff003c; width: 65px; height: 65px; font-size: 24px;}
     .btn-action:active { background: #ff003c; color: #fff; }
 
     #ui-layer {
@@ -37,18 +37,22 @@
     }
     .ui-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 
-    #mute-btn {
-        position: absolute; top: 12px; right: 18px; pointer-events: auto; cursor: pointer;
-        background: rgba(0,0,0,0.45); border: 2px solid #fff; color: #fff; border-radius: 8px;
-        font-size: 14px; padding: 6px 10px; z-index: 600; display: none; 
+    #settings-btn {
+        position: absolute; top: 15px; right: 15px; pointer-events: auto; cursor: pointer;
+        background: rgba(0,0,0,0.5); border: 2px solid #fff; color: #fff; border-radius: 50%;
+        width: 35px; height: 35px; font-size: 16px; display: flex; align-items: center; justify-content: center; z-index: 600;
     }
 
-    #game-over-screen, #quiz-screen, #start-screen, #life-lost-screen, #level-start-screen, #level-complete-screen {
+    #game-over-screen, #quiz-screen, #start-screen, #life-lost-screen, #level-start-screen, #level-complete-screen, #settings-screen {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         display: none; flex-direction: column; align-items: center; justify-content: center;
         border-radius: 8px; padding: 20px; box-sizing: border-box; text-align: center;
     }
     
+    #settings-screen { background: rgba(0,0,0,0.95); z-index: 4000; }
+    .setting-row { margin: 15px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 12px; }
+    input[type=range] { width: 200px; accent-color: #ff003c; }
+
     #level-start-screen { background: #000; z-index: 2500; }
     #level-complete-screen { background: rgba(0,0,0,0.9); z-index: 2500; }
     #game-over-screen { background: rgba(0, 0, 0, 0.92); z-index: 1000; white-space: pre-line; }
@@ -74,12 +78,12 @@
     }
     #quiz-input:focus { box-shadow: 0 0 15px #b026ff; }
     #quiz-submit { background: #b026ff; color: #fff; border: 2px solid #fff; padding: 12px 30px; font-size: 1em; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-family: 'Press Start 2P', monospace;}
-    #quiz-submit:active { transform: scale(0.95); }
-
+    
     #start-screen { background: #000; z-index: 3000; display: flex; }
     #start-title { color: #ff003c; font-size: 1.6em; text-shadow: 0 0 15px #ff003c; margin-bottom: 10px; }
     #start-sub { color: #fff; font-size: 0.7em; margin-bottom: 25px; line-height: 1.8; max-width: 80%; }
     #start-btn { background: #00c853; padding: 14px 30px; font-size: 1.1em; border-color: #fff; }
+    #btn-continue-save { background: #ff8000; padding: 10px 20px; font-size: 0.9em; border-color: #fff; display: none; }
 
     @media (max-width: 768px) { canvas { width: 100%; height: auto; } #ui-layer { font-size: 10px; } }
 </style>
@@ -91,15 +95,33 @@
 
     <div id="ui-layer">
         <div class="ui-col"><span>İREM</span><span id="score">000000</span></div>
+        <div class="ui-col"><span>🪙</span><span id="coins">x000</span></div>
         <div class="ui-col"><span>BÖLÜM</span><span id="world-label">1-1</span></div>
-        <div class="ui-col"><span>ALTIN</span><span id="coin-ui">🪙 x00</span></div>
         <div class="ui-col"><span>CAN</span><span id="hearts">❤x3</span></div>
     </div>
+
+    <div id="settings-btn">⚙️</div>
     
+    <!-- AYARLAR MENÜSÜ -->
+    <div id="settings-screen">
+        <h2 style="color:#ffd400; margin-bottom:20px;">AYARLAR</h2>
+        <div class="setting-row">
+            <label>MÜZİK SEVİYESİ</label>
+            <input type="range" id="vol-music" min="0" max="1" step="0.1" value="0.2">
+        </div>
+        <div class="setting-row">
+            <label>SES EFEKTİ SEVİYESİ</label>
+            <input type="range" id="vol-sfx" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        <button class="game-btn" id="btn-fullscreen" style="background:#5c94fc;">TAM EKRAN YAP</button>
+        <button class="game-btn" id="btn-close-settings" style="margin-top:30px;">KAPAT</button>
+    </div>
+
     <div id="start-screen">
         <div id="start-title">BİZİM HİKAYE</div>
-        <div id="start-sub">Bu macera 4 ayrı bölümden oluşuyor.<br><br>Yoluna çıkan mor kutuları kafa atarak aç, anılarımızı hatırla ve soruları bil.<br><br>Gizli kalpleri bularak can kazan!</div>
-        <button class="game-btn" id="start-btn">OYUNA BAŞLA</button>
+        <div id="start-sub">Aramızdaki anıları hatırlayarak ilerle.<br><br>Gizli borulara girmek için "▼" tuşunu kullan, yıldızları bularak yenilmez ol!</div>
+        <button class="game-btn" id="start-btn">YENİ OYUN</button>
+        <button class="game-btn" id="btn-continue-save">KALDIĞIN YERDEN DEVAM ET</button>
     </div>
 
     <div id="level-start-screen">
@@ -112,7 +134,7 @@
 
     <div id="level-complete-screen">
         <h2 style="color:#00ff66;">BÖLÜM GEÇİLDİ!</h2>
-        <button class="game-btn" id="btn-next-level" style="background:#00a800;">SIRADAKİ BÖLÜM ▶</button>
+        <button class="game-btn" id="btn-next-level" style="background:#00a800;">DEVAM ET ▶</button>
     </div>
 
     <div id="life-lost-screen">
@@ -136,9 +158,13 @@
 <div id="mobile-controls">
     <div class="d-pad">
         <div class="m-btn" id="btn-left">◀</div>
+        <div class="m-btn" id="btn-down" style="background: rgba(255, 212, 0, 0.2); border-color:#ffd400;">▼</div>
         <div class="m-btn" id="btn-right">▶</div>
     </div>
-    <div class="m-btn btn-action" id="btn-jump">B</div>
+    <div style="display:flex; gap:10px;">
+        <div class="m-btn btn-action" id="btn-fire" style="display:none; background: rgba(255,106,0,0.25); border-color:#ff6a00; color:#ff6a00;">🔥</div>
+        <div class="m-btn btn-action" id="btn-jump">B</div>
+    </div>
 </div>
 
 <script>
@@ -146,7 +172,7 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
 const gameOverScreen = document.getElementById('game-over-screen'); const lifeLostScreen = document.getElementById('life-lost-screen');
 const startScreen = document.getElementById('start-screen'); const quizScreen = document.getElementById('quiz-screen');
 const levelStartScreen = document.getElementById('level-start-screen'); const levelCompleteScreen = document.getElementById('level-complete-screen');
-const quizInput = document.getElementById('quiz-input');
+const settingsScreen = document.getElementById('settings-screen'); const quizInput = document.getElementById('quiz-input');
 
 const SEGMENT_WIDTH = 1130; 
 const MAX_LIVES = 3;
@@ -155,32 +181,45 @@ let currentLevelIndex = 1;
 const questionsPerLevel = [3, 3, 3, 4]; 
 let globalQIndex = 0; 
 
-let score = 0; let cameraX = 0; let isPaused = false; let isStarted = false; let reqId = null;
-let checkpoints = []; let checkpointIndex = 0; let shuffledQuestions = [];
-let coinCount = 0; 
-const activeCoins = [];
-
-/* ============== SES MOTORU (Çökmeye Karşı Korumalı) ============== */
+/* ============== SES VE MÜZİK MOTORU ============== */
 const AudioEngine = {
-    ctx: null, master: null,
+    ctx: null, masterSfx: null, masterMusic: null,
+    sfxVol: 0.5, musicVol: 0.2,
     init() {
         if (this.ctx) return;
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtx) return; 
             this.ctx = new AudioCtx();
-            this.master = this.ctx.createGain(); this.master.gain.value = 0.22; this.master.connect(this.ctx.destination);
-        } catch (e) {
-            console.warn("Ses motoru baslatilamadi, oyun sessiz modda devam edecek:", e);
-        }
+            this.masterSfx = this.ctx.createGain(); this.masterSfx.gain.value = this.sfxVol; this.masterSfx.connect(this.ctx.destination);
+            this.masterMusic = this.ctx.createGain(); this.masterMusic.gain.value = this.musicVol; this.masterMusic.connect(this.ctx.destination);
+        } catch (e) {}
+    },
+    updateVolumes() {
+        if (this.masterSfx) this.masterSfx.gain.value = this.sfxVol;
+        if (this.masterMusic) this.masterMusic.gain.value = this.musicVol;
     },
     tone(freq, dur, type = 'square', vol = 1, delay = 0) {
         if (!this.ctx) return; 
         try {
             const t0 = this.ctx.currentTime + delay; const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
             osc.type = type; osc.frequency.setValueAtTime(freq, t0); gain.gain.setValueAtTime(vol, t0); gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-            osc.connect(gain); gain.connect(this.master); osc.start(t0); osc.stop(t0 + dur + 0.02);
+            osc.connect(gain); gain.connect(this.masterSfx); osc.start(t0); osc.stop(t0 + dur + 0.02);
         } catch(e) {}
+    },
+    toneAt(freq, dur, type, vol, time) {
+        if (!this.ctx || !freq) return;
+        try {
+            const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, time); gain.gain.setValueAtTime(vol, time); gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+            osc.connect(gain); gain.connect(this.masterMusic); osc.start(time); osc.stop(time + dur + 0.02);
+        } catch(e) {}
+    },
+    noteFreq(note) {
+        if (!note) return 0;
+        const map = {C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+        const m = note.match(/^([A-G]#?)(\d)$/); if (!m) return 0;
+        const midi = (parseInt(m[2]) + 1) * 12 + map[m[1]]; return 440 * Math.pow(2, (midi - 69) / 12);
     },
     jump() { this.tone(520, 0.12, 'square', 0.5); this.tone(780, 0.1, 'square', 0.3, 0.05); },
     stomp() { this.tone(180, 0.15, 'square', 0.6); },
@@ -188,60 +227,98 @@ const AudioEngine = {
     wrong() { this.tone(200, 0.3, 'sawtooth', 0.5); this.tone(150, 0.35, 'sawtooth', 0.4, 0.1); },
     lifeLost() { this.tone(300, 0.2, 'sawtooth', 0.5); this.tone(220, 0.25, 'sawtooth', 0.5, 0.12); this.tone(140, 0.4, 'sawtooth', 0.5, 0.24); },
     fanfare() { [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.25, 'square', 0.5, i * 0.14)); },
-    powerup() { [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.1, 'square', 0.4, i * 0.08)); }
+    powerup() { [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.1, 'square', 0.4, i * 0.08)); },
+    coin() { this.tone(988, 0.08, 'square', 0.5); this.tone(1318, 0.18, 'square', 0.4, 0.06); },
+    pipe() { this.tone(300, 0.1, 'square', 0.5); this.tone(250, 0.1, 'square', 0.5, 0.1); this.tone(200, 0.2, 'square', 0.5, 0.2); }
 };
 
-/* ============== MOBİL UYUMLU BAĞLAYICILAR (Çarpışma & Tıklama Çözümü) ============== */
-function bindUIBtn(id, action) {
-    const btn = document.getElementById(id);
-    if(!btn) return;
-    btn.addEventListener('click', action);
-    btn.addEventListener('touchstart', action, {passive: false});
+const Music = {
+    isPlaying: false, intervalId: null, current: null, step: 0, nextTime: 0, bpm: 150,
+    tracks: {
+        overworld:   { lead: ['G4','B4','D5','G5','D5','B4','G4',null,'C5','E5','G5','C6','G5','E5','C5',null], bass: ['G3',null,'G3',null,'C3',null,'C3',null] },
+        night:       { lead: ['A4',null,'C5',null,'E5',null,'A5',null,'E5',null,'C5',null,'A4',null,null,null], bass: ['A2',null,null,null,'F2',null,null,null] },
+        underground: { lead: ['C4',null,'C4','D4','D#4',null,'D4',null,'C4',null,'G3',null,null,null,null,null], bass: ['C2','C3','A1','A2','G#1','G#2','G1','G2'] }
+    },
+    play(trackName) {
+        if (!AudioEngine.ctx) return; this.stop(); this.current = this.tracks[trackName]; if (!this.current) return;
+        this.step = 0; this.nextTime = AudioEngine.ctx.currentTime + 0.05; this.isPlaying = true;
+        this.intervalId = setInterval(() => this.scheduler(), 25);
+    },
+    scheduler() {
+        if (!this.isPlaying || !AudioEngine.ctx) return;
+        if (AudioEngine.ctx.state === 'suspended') { try { AudioEngine.ctx.resume(); } catch(e) {} }
+        while (this.nextTime < AudioEngine.ctx.currentTime + 0.1) {
+            this.playStep(this.step, this.nextTime); this.nextTime += (60 / this.bpm) / 2; this.step++;
+        }
+    },
+    playStep(step, time) {
+        const lead = this.current.lead[step % this.current.lead.length]; const bass = this.current.bass[step % this.current.bass.length];
+        if (lead) AudioEngine.toneAt(AudioEngine.noteFreq(lead), 0.2, 'square', 0.12, time);
+        if (bass) AudioEngine.toneAt(AudioEngine.noteFreq(bass), 0.35, 'triangle', 0.16, time);
+    },
+    stop() { this.isPlaying = false; if (this.intervalId) clearInterval(this.intervalId); this.intervalId = null; }
+};
+
+/* ============== SAVE & AYARLAR SİSTEMİ ============== */
+function saveGame() {
+    const data = { level: currentLevelIndex, lives: player.lives, score: score, coins: coinCount, qIndex: globalQIndex };
+    localStorage.setItem('kaponSaveData', JSON.stringify(data));
 }
+function loadGame() {
+    const s = localStorage.getItem('kaponSaveData');
+    if(s) {
+        const data = JSON.parse(s);
+        currentLevelIndex = data.level; player.lives = data.lives; score = data.score; coinCount = data.coins; globalQIndex = data.qIndex || 0;
+        return true;
+    }
+    return false;
+}
+if(localStorage.getItem('kaponSaveData')) { document.getElementById('btn-continue-save').style.display = 'block'; }
 
-const keys = { right: false, left: false, up: false };
-function resetKeys() { keys.right = false; keys.left = false; keys.up = false; }
-function inputBlocked() { return quizScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex' || lifeLostScreen.style.display === 'flex' || startScreen.style.display === 'flex' || levelStartScreen.style.display === 'flex' || levelCompleteScreen.style.display === 'flex'; }
+bindUIBtn('settings-btn', (e) => { e.preventDefault(); settingsScreen.style.display = 'flex'; });
+bindUIBtn('btn-close-settings', (e) => { e.preventDefault(); settingsScreen.style.display = 'none'; });
+bindUIBtn('btn-fullscreen', (e) => {
+    e.preventDefault();
+    if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => {}); document.getElementById('btn-fullscreen').innerText = "TAM EKRANDAN ÇIK"; } 
+    else { document.exitFullscreen(); document.getElementById('btn-fullscreen').innerText = "TAM EKRAN YAP"; }
+});
 
-window.addEventListener('keydown', (e) => { if (inputBlocked()) return; if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true; if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true; if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') { keys.up = true; e.preventDefault(); } });
-window.addEventListener('keyup', (e) => { if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false; if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false; if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false; });
+document.getElementById('vol-music').addEventListener('input', (e) => { AudioEngine.musicVol = parseFloat(e.target.value); AudioEngine.updateVolumes(); });
+document.getElementById('vol-sfx').addEventListener('input', (e) => { AudioEngine.sfxVol = parseFloat(e.target.value); AudioEngine.updateVolumes(); });
+
+/* ============== GİRDİ ============== */
+const keys = { right: false, left: false, up: false, down: false, fire: false };
+function resetKeys() { keys.right = false; keys.left = false; keys.up = false; keys.down = false; keys.fire = false; }
+function inputBlocked() { return quizScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex' || lifeLostScreen.style.display === 'flex' || startScreen.style.display === 'flex' || levelStartScreen.style.display === 'flex' || levelCompleteScreen.style.display === 'flex' || settingsScreen.style.display === 'flex'; }
+
+window.addEventListener('keydown', (e) => { 
+    if (inputBlocked()) return; 
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true; 
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true; 
+    if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') { keys.up = true; e.preventDefault(); } 
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') { keys.down = true; e.preventDefault(); }
+    if (e.code === 'KeyX' || e.code === 'ControlLeft') keys.fire = true; 
+});
+window.addEventListener('keyup', (e) => { 
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false; 
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false; 
+    if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false; 
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false; 
+    if (e.code === 'KeyX' || e.code === 'ControlLeft') keys.fire = false; 
+});
 
 const bindControl = (elem, isDown) => {
-    const handler = e => { e.preventDefault(); if(elem.id === 'btn-left') keys.left = isDown; else if(elem.id === 'btn-right') keys.right = isDown; else keys.up = isDown; };
+    const handler = e => { e.preventDefault(); if(elem.id === 'btn-left') keys.left = isDown; else if(elem.id === 'btn-right') keys.right = isDown; else if(elem.id === 'btn-down') keys.down = isDown; else if(elem.id === 'btn-fire') keys.fire = isDown; else keys.up = isDown; };
     if(isDown) { elem.addEventListener('pointerdown', handler); elem.addEventListener('touchstart', handler, {passive: false}); }
     else { elem.addEventListener('pointerup', handler); elem.addEventListener('touchend', handler); elem.addEventListener('pointercancel', handler); elem.addEventListener('touchcancel', handler); }
 };
-const btnLeft = document.getElementById('btn-left'); const btnRight = document.getElementById('btn-right'); const btnJump = document.getElementById('btn-jump');
-bindControl(btnLeft, true); bindControl(btnLeft, false); bindControl(btnRight, true); bindControl(btnRight, false); bindControl(btnJump, true); bindControl(btnJump, false);
+const btnLeft = document.getElementById('btn-left'); const btnRight = document.getElementById('btn-right'); const btnJump = document.getElementById('btn-jump'); const btnDown = document.getElementById('btn-down'); const btnFire = document.getElementById('btn-fire');
+bindControl(btnLeft, true); bindControl(btnLeft, false); bindControl(btnRight, true); bindControl(btnRight, false); bindControl(btnJump, true); bindControl(btnJump, false); bindControl(btnDown, true); bindControl(btnDown, false); bindControl(btnFire, true); bindControl(btnFire, false);
+function updateFireButtonVisibility() { btnFire.style.display = (player.powerState === 'fire') ? 'flex' : 'none'; }
 
-/* ============== YENİ ALTIN (COIN) SİSTEMİ ============== */
-function addCoin(x, y) {
-    coinCount++; score += 10; updateScore();
-    
-    if (coinCount >= 100) {
-        coinCount = 0; 
-        if(player.lives < MAX_LIVES) {
-            player.lives++;
-            updateHeartsUI(); 
-        }
-        AudioEngine.powerup(); 
-    }
-    
-    document.getElementById('coin-ui').innerText = '🪙 x' + String(coinCount).padStart(2, '0');
-    activeCoins.push({ x: x + 8, y: y - 16, vy: -8, opacity: 1 });
-    AudioEngine.jump(); 
-}
-
-function updateActiveCoins() {
-    if (isPaused || !isStarted) return;
-    for (let i = activeCoins.length - 1; i >= 0; i--) {
-        let c = activeCoins[i];
-        c.y += c.vy; 
-        c.vy += 0.8; 
-        if (c.vy > 0) c.opacity -= 0.12; 
-        if (c.opacity <= 0) activeCoins.splice(i, 1); 
-    }
-}
+/* ============== OYUN DURUMU ============== */
+let score = 0; let coinCount = 0; let cameraX = 0; let isPaused = false; let isStarted = false; let reqId = null;
+let checkpoints = []; let checkpointIndex = 0; let shuffledQuestions = []; let poleX = 0; let flagSeq = null; let isInSecretRoom = false;
 
 const questionsData = [
     { q: "Sana resmi olarak ilk aşkım dediğim tarih?", answers: ["13 mart", "13.03", "13mart"], failMsg: "İlk aşkım dediğim günü nasıl bilemezsin! 💔" },
@@ -266,44 +343,67 @@ function initQuestions() {
 }
 
 /* ============== MARIO ÇİZİMİ ============== */
-function marioFrame(isJumping, walkToggle) {
-    const R = '#f83800', B = '#0058f8', S = '#f8b800', H = '#5c3800', Y = '#ffff00', _ = null;
+function marioFrame(isJumping, walkToggle, fire, star) {
+    let R = fire ? '#f8f8f8' : '#f83800', B = fire ? '#c81400' : '#0058f8', S = '#f8b800', H = '#5c3800', Y = '#ffff00', _ = null;
+    if(star) { const colors = ['#f83800', '#00a800', '#ffd400', '#5c94fc', '#fff']; R = colors[Math.floor(Date.now()/50)%5]; B = colors[Math.floor(Date.now()/70)%5]; }
     if (isJumping) return [[_,_,_,R,R,R,R,R,R,_,_,_],[_,_,R,R,R,R,R,R,R,R,R,_],[_,_,H,H,H,S,S,H,S,_,_,_],[_,H,S,H,S,S,S,H,S,S,S,_],[_,H,S,H,H,S,S,S,H,S,S,S],[_,H,H,S,S,S,S,H,H,H,H,_],[_,_,_,S,S,S,S,S,S,S,_,_],[_,_,_,R,R,R,B,R,R,_,_,_],[_,_,R,R,R,R,B,R,R,R,_,_],[_,R,R,R,R,B,B,B,B,R,R,_],[_,S,S,R,B,Y,B,B,Y,B,R,_],[_,S,S,S,B,B,B,B,B,B,S,_],[_,_,S,B,B,B,B,B,B,B,B,_],[_,_,B,B,B,B,_,B,B,B,B,_],[_,H,H,H,_,_,_,_,H,H,H,_],[H,H,H,H,_,_,_,_,H,H,H,H]];
     const base = [[_,_,_,R,R,R,R,R,R,_,_,_],[_,_,R,R,R,R,R,R,R,R,R,_],[_,_,H,H,H,S,S,H,S,_,_,_],[_,H,S,H,S,S,S,H,S,S,S,_],[_,H,S,H,H,S,S,S,H,S,S,S],[_,H,H,S,S,S,S,H,H,H,H,_],[_,_,_,S,S,S,S,S,S,S,_,_],[_,_,R,R,B,R,R,R,_,_,_,_],[_,R,R,R,B,R,R,B,R,R,R,_],[R,R,R,R,B,B,B,B,R,R,R,R],[S,S,R,B,Y,B,B,Y,B,R,S,S],[S,S,S,B,B,B,B,B,B,S,S,S],[S,S,B,B,B,B,B,B,B,B,S,S],[_,_,B,B,B,_,_,B,B,B,_,_],[_,H,H,H,_,_,_,_,H,H,H,_],[H,H,H,H,_,_,_,_,H,H,H,H]];
     if (walkToggle) { base[14] = [_,_,H,H,H,_,_,_,_,H,H,_]; base[15] = [_,H,H,H,H,_,_,_,H,H,H,_]; }
     return base;
 }
-function drawMario(x, y, isJumping, direction, walkToggle) {
-    const pixels = marioFrame(isJumping, walkToggle); const pixelSize = 2;
-    ctx.save(); ctx.translate(x, y); if (direction < 0) { ctx.scale(-1, 1); ctx.translate(-24, 0); }
+function drawMario(x, y, isJumping, direction, walkToggle, big, fire, star) {
+    const pixels = marioFrame(isJumping, walkToggle, fire, star); const pixelSize = big ? 3 : 2;
+    ctx.save(); ctx.translate(x, y); if (direction < 0) { ctx.scale(-1, 1); ctx.translate(-12 * pixelSize, 0); }
     for (let r = 0; r < pixels.length; r++) { for (let c = 0; c < pixels[r].length; c++) { if (pixels[r][c] !== null) { ctx.fillStyle = pixels[r][c]; ctx.fillRect(c * pixelSize, r * pixelSize, pixelSize, pixelSize); } } }
     ctx.restore();
 }
 
-function drawCloud(x, y) {
-    if(currentLevelIndex % 2 === 0) return; 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.beginPath(); ctx.arc(x + 20, y + 15, 15, 0, Math.PI * 2); ctx.arc(x + 45, y + 5, 20, 0, Math.PI * 2); ctx.arc(x + 70, y + 15, 15, 0, Math.PI * 2); ctx.fillRect(x + 20, y + 5, 50, 25); ctx.fill();
-}
-function drawHill(x, y, size) {
-    if(currentLevelIndex % 2 === 0) return; 
-    ctx.fillStyle = '#00a800'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + size / 2, y - size / 1.5); ctx.lineTo(x + size, y); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#00d000'; ctx.beginPath(); ctx.moveTo(x + 10, y); ctx.lineTo(x + size / 2, y - size / 1.5 + 10); ctx.lineTo(x + size / 2 + 10, y - size / 1.5 + 10); ctx.lineTo(x + 25, y); ctx.fill();
-}
-function drawCastle(x, y) {
-    ctx.fillStyle = '#c84c0c'; ctx.fillRect(x, y - 100, 120, 100); ctx.strokeStyle = '#000'; ctx.strokeRect(x, y - 100, 120, 100);
-    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x + 60, y - 15, 20, Math.PI, 0); ctx.fillRect(x + 40, y - 15, 40, 15); ctx.fill();
-    for(let i=0; i<3; i++) { ctx.fillStyle = '#c84c0c'; ctx.fillRect(x + 10 + i*40, y - 130, 25, 30); ctx.strokeRect(x + 10 + i*40, y - 130, 25, 30); ctx.fillStyle = '#000'; ctx.fillRect(x + 15 + i*40, y - 120, 15, 15); }
+function drawBrickTexture(x, y, w, h) {
+    const dark = currentLevelIndex % 2 === 0 || y > 600; // Gece veya Gizli Oda
+    const base = dark ? '#0000a8' : '#c84c0c'; const mortar = dark ? '#5858e0' : '#f8a878';
+    ctx.fillStyle = base; ctx.fillRect(x, y, w, h); ctx.strokeStyle = mortar; ctx.lineWidth = 2;
+    const rowH = h / 2; for (let ry = 0; ry <= h; ry += rowH) { ctx.beginPath(); ctx.moveTo(x, y + ry); ctx.lineTo(x + w, y + ry); ctx.stroke(); }
+    const rows = Math.max(1, Math.round(h / rowH));
+    for (let r = 0; r < rows; r++) { const rowY = y + r * rowH; const offset = (r % 2 === 0) ? 0 : w / 2; for (let vx = offset; vx <= w; vx += w) { ctx.beginPath(); ctx.moveTo(x + vx, rowY); ctx.lineTo(x + vx, rowY + rowH); ctx.stroke(); } }
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.strokeRect(x, y, w, h);
 }
 
 /* ============== OYUNCU ============== */
 const player = {
     x: 50, y: 50, width: 24, height: 32,
-    vx: 0, vy: 0, speed: 5.2, jumpPower: -13.5, gravity: 0.65,
+    vx: 0, vy: 0, speed: 5.5, jumpPower: -16, gravity: 0.85,
     grounded: false, isDead: false, facingRight: true, levelFinished: false,
     lives: MAX_LIVES, walkTimer: 0, walkToggle: false, standingOn: null,
+    powerState: 'small', invincible: 0, firePrev: false, starTimer: 0, pipeTimer: 0,
 
     update() {
-        if (this.isDead || isPaused || !isStarted || this.levelFinished) return;
+        if (this.isDead || isPaused || !isStarted || this.levelFinished || this.pipeTimer > 0) return;
+
+        // YILDIZ GÜCÜ EFEKTİ
+        if (this.starTimer > 0) {
+            this.starTimer--;
+            if(this.starTimer === 0) { try{ Music.play(isInSecretRoom ? 'underground' : trackForLevel(currentLevelIndex)); }catch(e){} }
+        }
+
+        // GİZLİ ODAYA GİRİŞ (Boru üstündeyken aşağı basılırsa)
+        if (keys.down && this.grounded && this.standingOn && this.standingOn.isEntrance) {
+            this.pipeTimer = 30; AudioEngine.pipe();
+            setTimeout(() => {
+                this.x = this.standingOn.destX; this.y = this.standingOn.destY; cameraX = this.x - canvas.width/2; isInSecretRoom = true;
+                Music.play('underground'); this.pipeTimer = 0;
+            }, 1000);
+            return;
+        }
+
+        // GİZLİ ODADAN ÇIKIŞ
+        if (keys.down && this.grounded && this.standingOn && this.standingOn.isExit) {
+            this.pipeTimer = 30; AudioEngine.pipe();
+            setTimeout(() => {
+                this.x = this.standingOn.returnX; this.y = this.standingOn.returnY; cameraX = this.x - canvas.width/2; isInSecretRoom = false;
+                Music.play(trackForLevel(currentLevelIndex)); this.pipeTimer = 0;
+            }, 1000);
+            return;
+        }
 
         if (keys.right) { this.vx = this.speed; this.facingRight = true; }
         else if (keys.left) { this.vx = -this.speed; this.facingRight = false; }
@@ -315,63 +415,82 @@ const player = {
         if (keys.up && this.grounded) { this.vy = this.jumpPower; this.grounded = false; AudioEngine.jump(); }
         if (this.standingOn && this.standingOn.type === 'moving') { this.y += this.standingOn.vy; }
 
+        if (this.invincible > 0) this.invincible--;
+        if (keys.fire && !this.firePrev) shootFireball();
+        this.firePrev = keys.fire;
+
         this.vy += this.gravity;
         const prevX = this.x; this.x += this.vx; if (this.x < 0) this.x = 0; this.checkCollisions('x', prevX);
         const prevY = this.y; this.y += this.vy; this.grounded = false; this.standingOn = null; this.checkCollisions('y', prevY);
 
-        if (this.standingOn && this.standingOn.type === 'crumble' && !this.standingOn.broken) {
-            this.standingOn.crumbleTimer = (this.standingOn.crumbleTimer || 0) + 1; if (this.standingOn.crumbleTimer > 40) this.standingOn.broken = true;
-        }
-
         for (let i = 0; i < healthHearts.length; i++) {
             const h = healthHearts[i];
             if (!h.collected && this.x < h.x + 20 && this.x + this.width > h.x && this.y < h.y + 20 && this.y + this.height > h.y) {
-                h.collected = true;
-                if(this.lives < MAX_LIVES) { this.lives++; updateHeartsUI(); AudioEngine.powerup(); } else { score += 500; updateScore(); AudioEngine.powerup(); }
+                h.collected = true; if(this.lives < MAX_LIVES) { this.lives++; updateHeartsUI(); } score += 500; updateScore(); AudioEngine.powerup();
+            }
+        }
+
+        for (let i = 0; i < coins.length; i++) {
+            const c = coins[i];
+            if (!c.collected && this.x < c.x + 18 && this.x + this.width > c.x && this.y < c.y + 18 && this.y + this.height > c.y) {
+                c.collected = true; giveCoin(c.x, c.y);
+            }
+        }
+
+        for (let i = 0; i < powerups.length; i++) {
+            const pu = powerups[i];
+            if (!pu.collected && this.x < pu.x + 24 && this.x + this.width > pu.x && this.y < pu.y + 26 && this.y + this.height > pu.y) {
+                collectPowerup(pu);
+            }
+        }
+
+        for (let i = 0; i < platforms.length; i++) {
+            const p = platforms[i];
+            if (p.type === 'spike' && this.x < p.x + p.width - 6 && this.x + this.width > p.x + 6 && this.y < p.y + p.height && this.y + this.height > p.y + 6) {
+                if(this.starTimer <= 0) { loseLife("DİKENLERE BASTIN! 🌵"); return; }
             }
         }
 
         for (let i = 0; i < enemies.length; i++) {
-            let e = enemies[i];
-            if (e.alive && this.x < e.x + e.width && this.x + this.width > e.x && this.y < e.y + e.height && this.y + this.height > e.y) {
-                const wasAbove = (this.y - this.vy + this.height) <= e.y + 6;
-                if (e.stompable && this.vy > 0 && wasAbove) {
-                    e.alive = false; this.vy = -7; score += 100; updateScore(); AudioEngine.stomp();
-                } else { loseLife(e.kind === 'piranha' ? "PİRANHA BİTKİSİ SENİ YEDİ! 🥀" : "BİR CANLIYA ÇARPTIN! 👾"); return; }
+            let e = enemies[i]; if (!e.alive) continue;
+            if (!(this.x < e.x + e.width && this.x + this.width > e.x && this.y < e.y + e.height && this.y + this.height > e.y)) continue;
+
+            if(this.starTimer > 0) { e.alive = false; score += 200; updateScore(); AudioEngine.stomp(); continue; } // Yıldız gücü her şeyi ezer!
+
+            const wasAbove = (this.y - this.vy + this.height) <= e.y + 6;
+
+            if (e.kind === 'spiny') { // Yeni Düşman: Spiny (Üstüne zıplanmaz!)
+                hitByEnemy("DİKENLİ KAPLUMBAĞAYA ÇARPTIN! 🦔"); return;
+            }
+
+            if (e.stompable && this.vy > 0 && wasAbove) {
+                e.alive = false; this.vy = -7; score += 100; updateScore(); AudioEngine.stomp();
+            } else if (player.powerState !== 'small' && e.kind !== 'saw') {
+                e.alive = false; score += 100; updateScore(); AudioEngine.stomp();
+            } else {
+                hitByEnemy("BİR CANLIYA ÇARPTIN! 👾"); return;
             }
         }
 
         const finishX = checkpoints.length ? checkpoints[checkpoints.length - 1].x + 300 : Infinity;
-        if (this.x >= finishX + 30 && !this.levelFinished) { 
-            this.levelFinished = true;
-            isPaused = true;
-            AudioEngine.fanfare();
-            
-            setTimeout(() => {
-                if(currentLevelIndex < 4) {
-                    levelCompleteScreen.style.display = 'flex'; 
-                } else {
-                    winGame(); 
-                }
-            }, 3000);
+        if (!isInSecretRoom && this.x >= poleX && !this.levelFinished) { 
+            this.levelFinished = true; isPaused = true; this.x = poleX; this.vx = 0; this.vy = 0; Music.stop(); AudioEngine.fanfare(); flagSeq = { phase: 'slide', timer: 0 };
         }
         
-        if (this.y > canvas.height + 150) { loseLife("ÇUKURA DÜŞTÜN! 😱"); return; }
+        if (this.y > (isInSecretRoom ? 2500 : canvas.height + 150)) { loseLife("ÇUKURA DÜŞTÜN! 😱"); return; }
         
-        let currentSeg = 0;
-        for(let i=0; i<checkpoints.length; i++) { if(this.x >= checkpoints[i].x - 100) currentSeg = i; }
-        if (currentSeg > checkpointIndex) { checkpointIndex = currentSeg; }
+        let currentSeg = 0; for(let i=0; i<checkpoints.length; i++) { if(!isInSecretRoom && this.x >= checkpoints[i].x - 100) currentSeg = i; }
+        if (!isInSecretRoom && currentSeg > checkpointIndex) { checkpointIndex = currentSeg; }
     },
 
     checkCollisions(axis, prevPos) {
         for (let i = 0; i < platforms.length; i++) {
             let p = platforms[i];
-            if (p.destroyed || p.type === 'gate' && p.linked.hit) continue;
+            if (p.destroyed || p.type === 'spike' || (p.type === 'gate' && p.linked.hit)) continue;
 
             if (this.x < p.x + p.width && this.x + this.width > p.x && this.y < p.y + p.height && this.y + this.height > p.y) {
                 if (axis === 'x') {
-                    if (prevPos + this.width <= p.x) this.x = p.x - this.width;
-                    else if (prevPos >= p.x + p.width) this.x = p.x + p.width;
+                    if (prevPos + this.width <= p.x) this.x = p.x - this.width; else if (prevPos >= p.x + p.width) this.x = p.x + p.width;
                     this.vx = 0;
                 } else if (axis === 'y') {
                     if (this.vy > 0) {
@@ -379,15 +498,9 @@ const player = {
                     } else if (this.vy < 0) {
                         this.y = p.y + p.height; this.vy = 0;
                         if (p.type === 'quizblock' && !p.hit && !isPaused) { triggerQuiz(p); } 
-                        else if (p.type === 'brick') { p.destroyed = true; score += 50; updateScore(); AudioEngine.stomp(); }
-                        else if (p.type === 'coinblock' && !p.hit) {
-                            if (p.hitsLeft === undefined) p.hitsLeft = 1; 
-                            
-                            if (p.hitsLeft > 0) {
-                                addCoin(p.x, p.y);
-                                p.hitsLeft--;
-                                if (p.hitsLeft <= 0) p.hit = true; 
-                            }
+                        else if (p.type === 'brick') {
+                            if (player.powerState !== 'small' || this.starTimer > 0) { p.destroyed = true; score += 50; updateScore(); AudioEngine.stomp(); }
+                            else { p.bounce = 6; AudioEngine.stomp(); }
                         }
                     }
                     this.vy = 0;
@@ -396,87 +509,124 @@ const player = {
         }
     },
 
-    draw() { if (!this.isDead) drawMario(this.x, this.y, !this.grounded, this.facingRight ? 1 : -1, this.walkToggle); }
+    draw() {
+        if (this.isDead) return;
+        if (this.pipeTimer > 0) return; // Boruya girerken gizle
+        if (this.invincible > 0 && Math.floor(this.invincible / 4) % 2 === 0) return;
+        drawMario(this.x, this.y, !this.grounded, this.facingRight ? 1 : -1, this.walkToggle, this.powerState !== 'small', this.powerState === 'fire', this.starTimer > 0);
+    }
 };
 
-/* ============== SEVİYE OLUŞTURMA ============== */
-const platforms = []; const enemies = []; const healthHearts = [];
-
-function addQuizAndGate(cx, qx, qy, qIndex) {
-    const block = { x: qx, y: qy, width: 32, height: 32, type: 'quizblock', hit: false, qIndex }; platforms.push(block);
-    platforms.push({ x: qx + 70, y: -1200, width: 22, height: 1700, type: 'gate', linked: block }); return block;
+function applyPowerSize(prevHeight, prevWidth) {
+    const oldBottom = player.y + prevHeight; const oldCenterX = player.x + (prevWidth !== undefined ? prevWidth : player.width) / 2;
+    if (player.powerState === 'small') { player.width = 24; player.height = 32; } else { player.width = 36; player.height = 48; }
+    player.y = oldBottom - player.height; player.x = oldCenterX - player.width / 2; if (player.x < 0) player.x = 0;
 }
 
+function hitByEnemy(msg) {
+    if (player.isDead || player.invincible > 0 || player.starTimer > 0) return;
+    if (player.powerState !== 'small') {
+        const prevH = player.height, prevW = player.width; player.powerState = 'small'; applyPowerSize(prevH, prevW);
+        player.invincible = 90; updateFireButtonVisibility(); try { AudioEngine.wrong(); } catch(e) {}
+    } else { loseLife(msg); }
+}
+
+function collectPowerup(pu) {
+    pu.collected = true;
+    if (pu.type === 'mushroom') {
+        if (player.powerState === 'small') { const prevH = player.height, prevW = player.width; player.powerState = 'big'; applyPowerSize(prevH, prevW); AudioEngine.powerup(); popupMsg(pu.x, pu.y, '🍄 BÜYÜDÜN!'); } 
+        else { score += 500; updateScore(); AudioEngine.powerup(); }
+    } else if (pu.type === 'fire') {
+        if (player.powerState !== 'fire') { const prevH = player.height, prevW = player.width; player.powerState = 'fire'; applyPowerSize(prevH, prevW); AudioEngine.powerup(); popupMsg(pu.x, pu.y, '🔥 ATEŞ GÜCÜ!'); } 
+        else { score += 500; updateScore(); AudioEngine.powerup(); }
+    } else if (pu.type === 'star') {
+        player.starTimer = 400; AudioEngine.powerup(); popupMsg(pu.x, pu.y, '⭐ YENİLMEZLİK!');
+        try { Music.play('overworld'); /* Yıldız müziği eklenebilir, şimdilik hızlı tempoya geçeriz */ Music.bpm = 220; } catch(e){}
+    }
+    updateFireButtonVisibility();
+}
+
+function shootFireball() {
+    if (player.powerState !== 'fire' || isPaused || !isStarted) return; if (fireballs.length >= 2) return;
+    const dir = player.facingRight ? 1 : -1; fireballs.push({ x: player.x + player.width / 2, y: player.y + player.height / 2, vx: 7 * dir, life: 0 });
+    try { AudioEngine.tone(300, 0.08, 'square', 0.4); } catch(e) {}
+}
+
+function updateFireballs() {
+    if (isPaused || !isStarted) return;
+    for (let i = fireballs.length - 1; i >= 0; i--) {
+        const f = fireballs[i]; f.x += f.vx; f.life++; let hit = false;
+        enemies.forEach(e => { if (e.alive && f.x > e.x && f.x < e.x + e.width && f.y > e.y && f.y < e.y + e.height) { e.alive = false; score += 100; updateScore(); AudioEngine.stomp(); hit = true; } });
+        if (hit || f.life > 45 || f.x < cameraX - 50 || f.x > cameraX + canvas.width + 50) fireballs.splice(i, 1);
+    }
+}
+
+/* ============== SEVİYE OLUŞTURMA ============== */
+const platforms = []; const enemies = []; const healthHearts = []; const coins = []; const powerups = []; const fireballs = []; let coinPopups = [];
+function popupMsg(x, y, text) { coinPopups.push({ x: x, y: y, life: 0, text: text }); }
+function addQuizAndGate(cx, qx, qy, qIndex) { const block = { x: qx, y: qy, width: 32, height: 32, type: 'quizblock', hit: false, qIndex }; platforms.push(block); platforms.push({ x: qx + 32, y: -1200, width: 22, height: 1700, type: 'gate', linked: block }); return block; }
+function addCoinRow(startX, y, count, spacing) { for (let i = 0; i < count; i++) { coins.push({ x: startX + i * spacing, y: y, collected: false }); } }
+function giveCoin(x, y) { coinCount++; score += 10; updateScore(); coinPopups.push({ x: x, y: y, life: 0 }); try { AudioEngine.coin(); } catch(e) {} if (coinCount >= 100) { coinCount -= 100; if (player.lives < MAX_LIVES) { player.lives++; updateHeartsUI(); AudioEngine.powerup(); } } updateCoinsUI(); }
+
 function createLevel() {
-    platforms.length = 0; enemies.length = 0; healthHearts.length = 0; checkpoints = []; checkpointIndex = 0;
+    platforms.length = 0; enemies.length = 0; healthHearts.length = 0; coins.length = 0; powerups.length = 0; fireballs.length = 0; coinPopups.length = 0; checkpoints = []; checkpointIndex = 0; isInSecretRoom = false;
     
-    // YENİ TEST KUTUSU (Yüksekliği 310'a indirildi ve 5 altın hakkı verildi)
-    platforms.push({ x: 350, y: 310, width: 32, height: 32, type: 'coinblock', hit: false, hitsLeft: 5 });
-    
-    if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } 
-    else { canvas.style.backgroundColor = '#5c94fc'; }
+    if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } else { canvas.style.backgroundColor = '#5c94fc'; }
 
     let cx = 0;
     let questionsForThisLevel = questionsPerLevel[currentLevelIndex - 1]; 
-    let segmentsThisLevel = questionsForThisLevel * 2; 
+    let powerupToggle = 0;
 
-    for (let i = 0; i < segmentsThisLevel; i++) {
+    // GİZLİ ODA TASARIMI (Y: 1000 seviyesinde yeraltı)
+    platforms.push({ x: 3000, y: 1400, width: 800, height: 50, type: 'ground' });
+    platforms.push({ x: 3000, y: 1000, width: 50, height: 400, type: 'solid' }); // Sol duvar
+    addCoinRow(3200, 1300, 10, 30); addCoinRow(3200, 1200, 10, 30);
+    healthHearts.push({ x: 3400, y: 1100, collected: false });
+    platforms.push({ x: 3700, y: 1300, width: 48, height: 100, type: 'pipe', isExit: true, returnX: 800, returnY: 300 });
+
+    for (let i = 0; i < questionsForThisLevel; i++) {
         checkpoints.push({ x: cx + 20, y: 50 });
-        let type = globalQIndex % 4; 
-        let putQuestion = (i % 2 === 1); 
+        let qY = 290; 
 
-        if (type === 0) {
+        // Yıldız veya Mantar dağıtımı
+        if (i % 2 === 1) { powerups.push({ x: cx + 450, y: 180, type: (powerupToggle % 3 === 0 ? 'star' : 'mushroom'), collected: false }); powerupToggle++; }
+
+        if (i % 3 === 0) {
             platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 300, y: 260, width: 32, height: 32, type: 'brick' });
+            addQuizAndGate(cx, cx + 300, qY, shuffledQuestions[globalQIndex]); globalQIndex++;
             
-            if (putQuestion) { addQuizAndGate(cx, cx + 332, 260, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 332, y: 260, width: 32, height: 32, type: 'brick' }); }
-
-            platforms.push({ x: cx + 364, y: 260, width: 32, height: 32, type: 'brick' });
-            enemies.push({ x: cx + 500, y: 396, width: 24, height: 24, minX: cx + 450, maxX: cx + 650, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
-            platforms.push({ x: cx + 800, y: 388, width: 32, height: 32, type: 'solid' }); platforms.push({ x: cx + 832, y: 356, width: 32, height: 64, type: 'solid' }); platforms.push({ x: cx + 864, y: 324, width: 32, height: 96, type: 'solid' }); platforms.push({ x: cx + 896, y: 292, width: 32, height: 128, type: 'solid' });
-        }
-        else if (type === 1) {
+            // Gizli Odaya Giden Boru
+            platforms.push({ x: cx + 600, y: 360, width: 48, height: 60, type: 'pipe', isEntrance: true, destX: 3100, destY: 1300 });
+            
+            enemies.push({ kind: 'piranha', x: cx + 608, width: 32, height: 40, startY: 360, timer: 0, alive: true, stompable: false });
+            enemies.push({ x: cx + 800, y: 396, width: 24, height: 24, minX: cx + 750, maxX: cx + 1000, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
+            enemies.push({ x: cx + 900, y: 396, width: 24, height: 24, minX: cx + 800, maxX: cx + 1100, vx: -2.5, alive: true, stompable: false, kind: 'spiny' }); // YENİ DÜŞMAN EKLENDİ!
+        } 
+        else if (i % 3 === 1) {
             platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 250, y: 340, width: 48, height: 80, type: 'pipe' });
-            enemies.push({ kind: 'piranha', x: cx + 258, width: 32, height: 40, startY: 340, timer: 0, alive: true, stompable: false });
-            platforms.push({ x: cx + 450, y: 300, width: 48, height: 120, type: 'pipe' });
-            enemies.push({ kind: 'piranha', x: cx + 458, width: 32, height: 40, startY: 300, timer: 1.5, alive: true, stompable: false });
-            
-            if (putQuestion) { addQuizAndGate(cx, cx + 700, 200, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 700, y: 200, width: 32, height: 32, type: 'brick' }); }
-
-            enemies.push({ x: cx + 850, y: 396, width: 24, height: 24, minX: cx + 750, maxX: cx + 1000, vx: -2, alive: true, stompable: true, kind: 'goomba' });
-        }
-        else if (type === 2) {
-            platforms.push({ x: cx, y: 420, width: 300, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 400, y: 360, width: 80, height: 20, type: 'moving', minY: 150, maxY: 380, vy: -1.5 });
-            platforms.push({ x: cx + 600, y: 260, width: 32, height: 32, type: 'brick' });
-            
-            if (putQuestion) { addQuizAndGate(cx, cx + 632, 260, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 632, y: 260, width: 32, height: 32, type: 'brick' }); }
-
-            platforms.push({ x: cx + 664, y: 260, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 800, y: 420, width: 400, height: 50, type: 'ground' });
-        }
-        else if (type === 3) {
+            platforms.push({ x: cx + 200, y: qY, width: 32, height: 32, type: 'brick' });
+            addQuizAndGate(cx, cx + 232, qY, shuffledQuestions[globalQIndex]); globalQIndex++;
+            platforms.push({ x: cx + 264, y: qY, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: cx + 296, y: qY, width: 32, height: 32, type: 'brick' }); 
+            platforms.push({ x: cx + 328, y: qY, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: cx + 650, y: 320, width: 48, height: 100, type: 'pipe' });
+            enemies.push({ kind: 'piranha', x: cx + 658, width: 32, height: 40, startY: 320, timer: 1.5, alive: true, stompable: false });
+        } 
+        else {
             platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 200, y: 260, width: 32, height: 32, type: 'brick' }); platforms.push({ x: cx + 232, y: 260, width: 32, height: 32, type: 'brick' }); platforms.push({ x: cx + 264, y: 260, width: 32, height: 32, type: 'brick' });
-            
-            if (putQuestion) { addQuizAndGate(cx, cx + 550, 150, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 550, y: 150, width: 32, height: 32, type: 'brick' }); }
-
-            platforms.push({ x: cx + 550, y: 280, width: 32, height: 32, type: 'solid' }); 
-            enemies.push({ x: cx + 300, y: 396, width: 24, height: 24, minX: cx + 200, maxX: cx + 500, vx: -1.5, alive: true, stompable: true, kind: 'goomba' });
+            platforms.push({ x: cx + 200, y: 388, width: 32, height: 32, type: 'solid' });
+            platforms.push({ x: cx + 232, y: 356, width: 32, height: 64, type: 'solid' });
+            platforms.push({ x: cx + 264, y: 324, width: 32, height: 96, type: 'solid' });
+            addQuizAndGate(cx, cx + 550, qY, shuffledQuestions[globalQIndex]); globalQIndex++;
+            enemies.push({ x: cx + 750, y: 396, width: 24, height: 24, minX: cx + 600, maxX: cx + 1000, vx: -2, alive: true, stompable: true, kind: 'goomba' });
         }
 
-        if (i % 3 === 1) { healthHearts.push({ x: cx + 300, y: 120, collected: false }); }
-
-        cx += 1200 + 130;
+        cx += 1200;
     }
     
     platforms.push({ x: cx, y: 420, width: 1000, height: 50, type: 'ground' }); 
-    enemies.forEach(e => { e.startX = e.x; e.startY = e.y; });
+    poleX = cx + 500;
+    enemies.forEach(e => { e.startX = e.x; e.startY = e.y; e.startVx = e.vx; });
     
     document.getElementById('world-label').innerText = `1-${currentLevelIndex}`;
 }
@@ -486,7 +636,6 @@ function updateEnemies() {
     enemies.forEach(e => {
         if (!e.alive) return;
         if (e.kind === 'piranha') { e.timer += 0.04; e.y = e.startY - Math.abs(Math.sin(e.timer)) * 42; } 
-        else if (e.kind === 'flyer') { e.y += e.vy; if (e.y <= e.minY || e.y >= e.maxY) e.vy *= -1; } 
         else { e.x += e.vx; if (e.x <= e.minX || e.x >= e.maxX) e.vx *= -1; }
     });
 }
@@ -497,211 +646,151 @@ function updateMovingPlatforms() {
 
 /* ============== BÖLÜM GEÇİŞ VE ARAYÜZ FONKSİYONLARI ============== */
 function startLevelTransition() {
-    startScreen.style.display = 'none';
-    levelCompleteScreen.style.display = 'none';
-    document.getElementById('ls-world-num').innerText = currentLevelIndex;
-    document.getElementById('ls-lives-num').innerText = player.lives;
-    levelStartScreen.style.display = 'flex';
-    
-    setTimeout(() => {
-        levelStartScreen.style.display = 'none';
-        isStarted = true;
-        isPaused = false;
-    }, 2000); 
+    startScreen.style.display = 'none'; levelCompleteScreen.style.display = 'none';
+    document.getElementById('ls-world-num').innerText = currentLevelIndex; document.getElementById('ls-lives-num').innerText = player.lives;
+    levelStartScreen.style.display = 'flex'; saveGame(); // OYUN BAŞLARKEN KAYDET!
+    setTimeout(() => { levelStartScreen.style.display = 'none'; isStarted = true; isPaused = false; Music.bpm = 150; try { Music.play(trackForLevel(currentLevelIndex)); } catch(e) {} }, 2000); 
 }
 
-bindUIBtn('start-btn', (e) => {
-    e.preventDefault();
-    if (isStarted) return;
-    AudioEngine.init();
-    if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') { try { AudioEngine.ctx.resume(); } catch(err){} }
-    try { AudioEngine.startMusic(); } catch(err){}
-    startLevelTransition();
-});
+function trackForLevel(idx) { return ['overworld', 'night', 'underground', 'castle'][(idx - 1) % 4] || 'overworld'; }
 
-bindUIBtn('btn-next-level', (e) => {
-    e.preventDefault();
-    currentLevelIndex++;
-    player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.levelFinished = false;
-    createLevel();
-    startLevelTransition();
-});
+bindUIBtn('start-btn', (e) => { e.preventDefault(); if (isStarted) return; localStorage.removeItem('kaponSaveData'); AudioEngine.init(); try { AudioEngine.startMusic(); } catch(err){} startLevelTransition(); });
+bindUIBtn('btn-continue-save', (e) => { e.preventDefault(); if(loadGame()) { AudioEngine.init(); createLevel(); updateScore(); updateHeartsUI(); updateCoinsUI(); startLevelTransition(); } });
 
-bindUIBtn('btn-continue', (e) => {
-    e.preventDefault();
-    lifeLostScreen.style.display = 'none'; const cp = checkpoints[checkpointIndex];
-    player.x = cp.x; player.y = cp.y; player.vx = 0; player.vy = 0; player.isDead = false; isPaused = false;
-    platforms.forEach(p => { if (p.type === 'brick') p.destroyed = false; });
-    enemies.forEach(e => { e.alive = true; e.x = e.startX; e.y = e.startY; if(e.kind === 'piranha') e.timer = 0; });
-});
+bindUIBtn('btn-next-level', (e) => { e.preventDefault(); currentLevelIndex++; player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.levelFinished = false; createLevel(); startLevelTransition(); });
 
-bindUIBtn('btn-restart', (e) => {
-    e.preventDefault();
-    if (document.getElementById('btn-restart').innerText === "SENİ ÇOK SEVİYORUM!") return;
-    fullRestart();
-});
-
+function loseLife(reason) {
+    if (player.isDead) return; player.isDead = true; isPaused = true; resetKeys(); AudioEngine.lifeLost(); Music.stop();
+    player.lives = Math.max(0, player.lives - 1); updateHeartsUI(); player.powerState = 'small'; player.width = 24; player.height = 32; updateFireButtonVisibility();
+    if (player.lives > 0) { document.getElementById('ll-title').innerText = reason; document.getElementById('ll-sub').innerText = `${player.lives} canın kaldı. Bu bölüme kaldığın yerden devam ediyorsun.`; lifeLostScreen.style.display = 'flex';
+    } else { document.getElementById('go-title').innerText = reason + "\n\nCANLARIN BİTTİ! HER ŞEY BAŞA SARDI..."; document.getElementById('go-title').style.color = "#ff003c"; document.getElementById('btn-restart').innerText = "EN BAŞA DÖN"; gameOverScreen.style.display = 'flex'; localStorage.removeItem('kaponSaveData'); }
+}
+bindUIBtn('btn-continue', (e) => { e.preventDefault(); lifeLostScreen.style.display = 'none'; const cp = checkpoints[checkpointIndex]; player.x = cp.x; player.y = cp.y; player.vx = 0; player.vy = 0; player.isDead = false; isPaused = false; platforms.forEach(p => { if (p.type === 'brick') p.destroyed = false; }); enemies.forEach(e => { e.alive = true; e.x = e.startX; e.y = e.startY; if(e.kind === 'piranha') e.timer = 0; }); Music.bpm = 150; try { Music.play(trackForLevel(currentLevelIndex)); } catch(err){} });
+bindUIBtn('btn-restart', (e) => { e.preventDefault(); if (document.getElementById('btn-restart').innerText === "SENİ ÇOK SEVİYORUM!") return; fullRestart(); });
 
 /* ============== QUIZ SİSTEMİ ============== */
 function triggerQuiz(blockInfo) {
-    resetKeys(); isPaused = true; currentQuizBlock = blockInfo;
-    const quizData = questionsData[blockInfo.qIndex];
-    document.getElementById('quiz-question').innerText = quizData.q;
-    quizInput.value = ''; quizScreen.style.display = 'flex'; requestAnimationFrame(() => quizInput.focus());
+    resetKeys(); isPaused = true; currentQuizBlock = blockInfo; const quizData = questionsData[blockInfo.qIndex];
+    document.getElementById('quiz-question').innerText = quizData.q; quizInput.value = ''; quizScreen.style.display = 'flex'; requestAnimationFrame(() => quizInput.focus());
 }
 
 bindUIBtn('quiz-submit', (e) => { e.preventDefault(); checkTypedAnswer(); });
 quizInput.addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); checkTypedAnswer(); }});
-
 function normalizeText(s) { return s.toLowerCase().trim().replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/i̇/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u'); }
 
 function checkTypedAnswer() {
-    const userAnswer = normalizeText(quizInput.value);
-    if (userAnswer.length < 1) return; 
-
+    const userAnswer = normalizeText(quizInput.value); if (userAnswer.length < 1) return; 
     if(userAnswer === "seni seviyorum" || userAnswer === "seni cok seviyorum") {
         quizScreen.style.display = 'none'; resetKeys(); currentQuizBlock.hit = true;
         if(player.lives < MAX_LIVES) { player.lives++; updateHeartsUI(); AudioEngine.powerup(); alert("Gizli Şifre Bulundu! 💖\nKerem de seni çok seviyor... +1 Can kazandın!"); } 
         else { score += 1000; updateScore(); AudioEngine.powerup(); alert("Gizli Şifre Bulundu! 💖\nKerem de seni çok seviyor..."); }
-        isPaused = false; return;
+        isPaused = false; saveGame(); return;
     }
-
     const quizData = questionsData[currentQuizBlock.qIndex];
     let isCorrect = quizData.answers.some(ans => { if (userAnswer === ans || userAnswer.includes(ans)) return true; return false; });
-
     quizScreen.style.display = 'none'; resetKeys();
-    if (isCorrect) { currentQuizBlock.hit = true; score += 500; updateScore(); isPaused = false; AudioEngine.correct(); } 
+    if (isCorrect) { currentQuizBlock.hit = true; score += 500; updateScore(); isPaused = false; AudioEngine.correct(); saveGame(); } 
     else { isPaused = false; AudioEngine.wrong(); loseLife(quizData.failMsg); }
 }
 
 /* ============== ÇİZİM ============== */
 function drawGame() {
-    for (let i = 0; i < 40; i++) { drawCloud(150 + i * 400, 60 + (i % 3) * 30); }
-    for (let i = 0; i < 20; i++) { drawHill(250 + i * 600, 420, 150); drawHill(500 + i * 600, 420, 90); }
-
-    const finishX = checkpoints[checkpoints.length - 1].x + 300;
-    ctx.fillStyle = '#fff'; ctx.fillRect(finishX, 50, 4, 370); 
-    ctx.fillStyle = '#00a800'; ctx.fillRect(finishX - 6, 42, 16, 16); 
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(finishX + 4, 60); ctx.lineTo(finishX + 40, 75); ctx.lineTo(finishX + 4, 90); ctx.fill();
-    drawCastle(finishX + 150, 420); 
+    if(!isInSecretRoom) {
+        for (let i = 0; i < 40; i++) { drawCloud(150 + i * 400, 60 + (i % 3) * 30); }
+        for (let i = 0; i < 20; i++) { drawHill(250 + i * 600, 420, 150); drawHill(500 + i * 600, 420, 90); }
+        ctx.fillStyle = '#fff'; ctx.fillRect(poleX, 50, 4, 370); ctx.fillStyle = '#00a800'; ctx.fillRect(poleX - 6, 42, 16, 16); 
+        const flagY = player.levelFinished ? Math.min(player.y + 6, 390) : 60;
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(poleX + 4, flagY); ctx.lineTo(poleX + 40, flagY + 15); ctx.lineTo(poleX + 4, flagY + 30); ctx.fill();
+        drawCastle(poleX + 150, 420); 
+    }
 
     enemies.forEach(e => {
         if (!e.alive) return;
         if (e.kind === 'piranha') {
-            ctx.fillStyle = '#00a800'; ctx.fillRect(e.x+12, e.y+20, 8, 20); 
-            ctx.fillStyle = '#ff003c'; ctx.beginPath(); ctx.arc(e.x+16, e.y+10, 14, 0, Math.PI*2); ctx.fill(); 
-            ctx.fillStyle = '#fff'; ctx.fillRect(e.x+2, e.y+5, 28, 4); 
-            ctx.fillStyle = '#000'; ctx.fillRect(e.x+14, e.y+2, 4, 4); 
-        }
-        else if (e.kind === 'flyer') {
-            ctx.fillStyle = '#7a2a8a'; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.moveTo(e.x, e.y + 10); ctx.lineTo(e.x - 12, e.y + 2); ctx.lineTo(e.x, e.y + 18); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(e.x + e.width, e.y + 10); ctx.lineTo(e.x + e.width + 12, e.y + 2); ctx.lineTo(e.x + e.width, e.y + 18); ctx.fill();
-            ctx.fillStyle = '#ff003c'; ctx.fillRect(e.x + 6, e.y + 8, 4, 4); ctx.fillRect(e.x + 14, e.y + 8, 4, 4);
+            ctx.fillStyle = '#00a800'; ctx.fillRect(e.x+12, e.y+20, 8, 20); ctx.fillStyle = '#ff003c'; ctx.beginPath(); ctx.arc(e.x+16, e.y+10, 14, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(e.x+2, e.y+5, 28, 4); ctx.fillStyle = '#000'; ctx.fillRect(e.x+14, e.y+2, 4, 4); 
+        } else if (e.kind === 'spiny') { // DİKENLİ KAPLUMBAĞA ÇİZİMİ
+            ctx.fillStyle = '#ff003c'; ctx.beginPath(); ctx.arc(e.x+12, e.y+24, 12, Math.PI, 0); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(e.x+4, e.y+12); ctx.lineTo(e.x+8, e.y+4); ctx.lineTo(e.x+12, e.y+12); ctx.fill(); ctx.beginPath(); ctx.moveTo(e.x+12, e.y+12); ctx.lineTo(e.x+16, e.y+4); ctx.lineTo(e.x+20, e.y+12); ctx.fill();
+            ctx.fillStyle = '#ffcc99'; ctx.fillRect(e.x+2, e.y+20, 6, 4); ctx.fillStyle = '#000'; ctx.fillRect(e.x+4, e.y+22, 2, 2);
         } else {
-            ctx.fillStyle = '#8b4513'; ctx.fillRect(e.x, e.y, e.width, e.height);
-            ctx.fillStyle = '#ffcc99'; ctx.fillRect(e.x, e.y + 20, 8, 4); ctx.fillRect(e.x + 16, e.y + 20, 8, 4);
-            ctx.fillStyle = '#fff'; ctx.fillRect(e.x + 4, e.y + 6, 6, 8); ctx.fillRect(e.x + 14, e.y + 6, 6, 8);
-            ctx.fillStyle = '#000'; ctx.fillRect(e.x + 6, e.y + 10, 2, 2); ctx.fillRect(e.x + 16, e.y + 10, 2, 2);
+            ctx.fillStyle = '#8b4513'; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.fillStyle = '#ffcc99'; ctx.fillRect(e.x, e.y + 20, 8, 4); ctx.fillRect(e.x + 16, e.y + 20, 8, 4); ctx.fillStyle = '#fff'; ctx.fillRect(e.x + 4, e.y + 6, 6, 8); ctx.fillRect(e.x + 14, e.y + 6, 6, 8); ctx.fillStyle = '#000'; ctx.fillRect(e.x + 6, e.y + 10, 2, 2); ctx.fillRect(e.x + 16, e.y + 10, 2, 2);
         }
     });
 
     platforms.forEach(p => {
         if(p.destroyed) return; 
-        
-        if (p.type === 'ground' || p.type === 'solid') {
-            if(currentLevelIndex % 2 === 0) {
-                ctx.fillStyle = '#0000a8'; ctx.fillRect(p.x, p.y + 10, p.width, p.height - 10); 
-                ctx.fillStyle = '#00d000'; ctx.fillRect(p.x, p.y, p.width, 10); 
-            } else {
-                ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y + 10, p.width, p.height - 10);
-                ctx.fillStyle = '#00a800'; ctx.fillRect(p.x, p.y, p.width, 10); 
-            }
-            ctx.fillStyle = '#000'; ctx.fillRect(p.x, p.y, p.width, 2); ctx.fillRect(p.x, p.y+10, p.width, 2); 
-            ctx.strokeRect(p.x, p.y, p.width, p.height);
-        } else if (p.type === 'brick') {
-            ctx.fillStyle = currentLevelIndex % 2 === 0 ? '#0000a8' : '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-            ctx.beginPath(); ctx.moveTo(p.x, p.y+16); ctx.lineTo(p.x+p.width, p.y+16); ctx.stroke(); 
-        } else if (p.type === 'pipe') {
-            ctx.fillStyle = '#008800'; ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 5, p.y, 12, p.height); 
-            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-            ctx.fillStyle = '#008800'; ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); 
-            ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 1, p.y, 12, 20); 
-            ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
-        } else if (p.type === 'coinblock' || p.type === 'quizblock') {
-            if (p.hit) {
-                ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y, p.width, p.height);
-                ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.width, p.height);
-                ctx.fillStyle = '#000'; 
-                ctx.fillRect(p.x + 4, p.y + 4, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + 4, 4, 4);
-                ctx.fillRect(p.x + 4, p.y + p.height - 8, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + p.height - 8, 4, 4);
-            } else {
-                ctx.fillStyle = p.type === 'quizblock' ? '#b026ff' : '#f8b800'; 
-                ctx.fillRect(p.x, p.y, p.width, p.height);
-                ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.width, p.height);
-                
-                ctx.fillStyle = '#000';
-                ctx.fillRect(p.x + 4, p.y + 4, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + 4, 4, 4);
-                ctx.fillRect(p.x + 4, p.y + p.height - 8, 4, 4); ctx.fillRect(p.x + p.width - 8, p.y + p.height - 8, 4, 4);
+        if (p.type === 'ground' || p.type === 'solid') { drawBrickTexture(p.x, p.y, p.width, p.height); } 
+        else if (p.type === 'brick') { drawBrickTexture(p.x, p.y, p.width, p.height); } 
+        else if (p.type === 'pipe') { ctx.fillStyle = '#008800'; ctx.fillRect(p.x, p.y, p.width, p.height); ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 5, p.y, 12, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height); ctx.fillStyle = '#008800'; ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 1, p.y, 12, 20); ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20); } 
+        else if (p.type === 'quizblock') { ctx.fillStyle = p.hit ? (currentLevelIndex % 2 === 0 ? '#0000a8' : '#c84c0c') : '#b026ff'; ctx.fillRect(p.x, p.y, p.width, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height); if (!p.hit) { ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); } } 
+        else if (p.type === 'gate' && !p.linked.hit) { ctx.save(); ctx.globalAlpha = 0.35 + 0.15 * Math.sin(Date.now() / 150); ctx.fillStyle = '#b026ff'; ctx.fillRect(p.x, isInSecretRoom?1000:0, p.width, canvas.height); ctx.restore(); }
+    });
 
-                ctx.fillStyle = '#c84c0c'; 
-                ctx.fillRect(p.x + 10, p.y + 8, 12, 4); ctx.fillRect(p.x + 18, p.y + 12, 4, 6);
-                ctx.fillRect(p.x + 14, p.y + 18, 4, 4); ctx.fillRect(p.x + 14, p.y + 24, 4, 4);
-                
-                ctx.fillStyle = '#fff'; 
-                ctx.fillRect(p.x + 8, p.y + 6, 12, 4); ctx.fillRect(p.x + 16, p.y + 10, 4, 6);
-                ctx.fillRect(p.x + 12, p.y + 16, 4, 4); ctx.fillRect(p.x + 12, p.y + 22, 4, 4);
-            }
-        } else if (p.type === 'moving') {
-            ctx.fillStyle = '#ffd400'; ctx.fillRect(p.x, p.y, p.width, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-        } else if (p.type === 'gate' && !p.linked.hit) {
-            ctx.save(); ctx.globalAlpha = 0.35 + 0.15 * Math.sin(Date.now() / 150); ctx.fillStyle = '#b026ff'; ctx.fillRect(p.x, 0, p.width, canvas.height); ctx.restore();
+    powerups.forEach(pu => {
+        if (pu.collected) return;
+        const bob = 4 * Math.sin(Date.now() / 250 + pu.x);
+        if (pu.type === 'star') {
+            ctx.save(); ctx.translate(pu.x + 12, pu.y + 12 + bob);
+            const colors = ['#f83800', '#00a800', '#ffd400', '#5c94fc', '#fff']; ctx.fillStyle = colors[Math.floor(Date.now()/100)%5];
+            ctx.beginPath(); for(let i=0;i<5;i++) { ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*12, -Math.sin((18+i*72)*Math.PI/180)*12); ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*5, -Math.sin((54+i*72)*Math.PI/180)*5); } ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#000'; ctx.fillRect(-3, -2, 2, 4); ctx.fillRect(2, -2, 2, 4); ctx.restore();
+        } else {
+            ctx.save(); ctx.translate(pu.x, pu.y + bob); ctx.fillStyle = '#f83800'; ctx.beginPath(); ctx.arc(12, 10, 12, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(7, 8, 3, 0, Math.PI * 2); ctx.arc(17, 8, 3, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#f8d0a0'; ctx.fillRect(5, 10, 14, 10); ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.strokeRect(5, 10, 14, 10); ctx.strokeRect(-0.5, 0, 25, 20); ctx.restore();
         }
     });
 
-    activeCoins.forEach(c => {
-        ctx.save(); ctx.globalAlpha = Math.max(0, c.opacity); ctx.fillStyle = '#ffff00'; 
-        ctx.beginPath(); ctx.ellipse(c.x + 8, c.y + 8, 8, 12, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#d69e00'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    fireballs.forEach(f => { ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(Date.now() / 60); ctx.fillStyle = '#ff6a00'; ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ffd400'; ctx.beginPath(); ctx.arc(-2, -2, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
+
+    coins.forEach(c => {
+        if (c.collected) return;
+        const spin = Math.abs(Math.cos(Date.now() / 160 + c.x)); ctx.save(); ctx.translate(c.x + 9, c.y + 9); ctx.scale(Math.max(0.15, spin), 1); ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fillStyle = '#ffd400'; ctx.fill(); ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
     });
 
-    healthHearts.forEach(h => {
-        if (h.collected) return;
-        ctx.fillStyle = '#ff003c'; ctx.font = '24px Arial'; ctx.fillText('❤', h.x, h.y + 10 * Math.sin(Date.now() / 200)); 
+    coinPopups.forEach(p => {
+        const alpha = Math.max(0, 1 - p.life / 40); ctx.save(); ctx.globalAlpha = alpha;
+        if (p.text) { ctx.font = 'bold 15px monospace'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.textAlign = 'center'; ctx.strokeText(p.text, p.x, p.y - p.life * 1.3); ctx.fillText(p.text, p.x, p.y - p.life * 1.3); ctx.textAlign = 'left'; }
+        else { ctx.font = '20px Arial'; ctx.fillText('🪙', p.x, p.y - p.life * 1.3); } ctx.restore();
     });
+
+    healthHearts.forEach(h => { if (h.collected) return; ctx.fillStyle = '#ff003c'; ctx.font = '24px Arial'; ctx.fillText('❤', h.x, h.y + 10 * Math.sin(Date.now() / 200)); });
 }
 
 /* ============== UI VE CAN SİSTEMİ ============== */
 function updateScore() { document.getElementById('score').innerText = String(score).padStart(6, '0'); }
 function updateHeartsUI() { document.getElementById('hearts').innerText = '❤x' + player.lives; }
+function updateCoinsUI() { document.getElementById('coins').innerText = 'x' + String(coinCount).padStart(3, '0'); }
+function updateCoinPopups() { for (let i = coinPopups.length - 1; i >= 0; i--) { coinPopups[i].life++; if (coinPopups[i].life > 40) coinPopups.splice(i, 1); } }
 
 function fullRestart() {
-    resetKeys(); player.lives = MAX_LIVES; player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.isDead = false; player.levelFinished = false; isPaused = false; score = 0;
-    currentLevelIndex = 1; globalQIndex = 0; initQuestions(); updateScore(); updateHeartsUI(); createLevel(); gameOverScreen.style.display = 'none'; startLevelTransition();
+    resetKeys(); player.lives = MAX_LIVES; player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.isDead = false; player.levelFinished = false; isPaused = false; score = 0; coinCount = 0; player.powerState = 'small'; player.starTimer = 0;
+    currentLevelIndex = 1; globalQIndex = 0; initQuestions(); updateScore(); updateHeartsUI(); updateCoinsUI(); createLevel(); localStorage.removeItem('kaponSaveData'); gameOverScreen.style.display = 'none'; startLevelTransition();
+}
+
+function updateFlagSequence() {
+    if (!flagSeq) return;
+    if (flagSeq.phase === 'slide') {
+        player.y += 4.2; if (player.y >= 388) { player.y = 388; flagSeq.phase = 'walk'; flagSeq.timer = 0; }
+    } else if (flagSeq.phase === 'walk') {
+        player.x += 2.3; player.facingRight = true; player.walkTimer++; if (player.walkTimer > 6) { player.walkToggle = !player.walkToggle; player.walkTimer = 0; }
+        flagSeq.timer++; if (flagSeq.timer > 65) { flagSeq = null; setTimeout(() => { levelCompleteScreen.style.display = 'flex'; }, 350); }
+    }
 }
 
 function winGame() {
-    if (player.isDead) return; resetKeys(); player.isDead = true; 
-    try { AudioEngine.fanfare(); } catch(e){}
-    document.getElementById('go-title').innerText = "VEEE FİNAL! 💖\nTÜM SORULARI GEÇTİN!"; document.getElementById('go-title').style.color = "#00ff66"; document.getElementById('btn-restart').innerText = "SENİ ÇOK SEVİYORUM!"; gameOverScreen.style.display = 'flex';
+    if (player.isDead) return; resetKeys(); player.isDead = true; Music.stop(); try { AudioEngine.fanfare(); } catch(e){}
+    document.getElementById('go-title').innerText = "VEEE FİNAL! 💖\nTÜM SORULARI GEÇTİN!"; document.getElementById('go-title').style.color = "#00ff66"; document.getElementById('btn-restart').innerText = "SENİ ÇOK SEVİYORUM!"; gameOverScreen.style.display = 'flex'; localStorage.removeItem('kaponSaveData');
 }
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let targetCamX = player.x - canvas.width / 2 + player.width / 2; if (targetCamX < 0) targetCamX = 0;
-    const maxCam = checkpoints.length ? checkpoints[checkpoints.length - 1].x + 400 - canvas.width / 2 : 0; if (targetCamX > maxCam) targetCamX = maxCam;
+    const maxCam = poleX ? poleX + 400 - canvas.width / 2 : 3500; if (!isInSecretRoom && targetCamX > maxCam) targetCamX = maxCam;
     cameraX = targetCamX;
-    
-    updateActiveCoins();
-    
-    ctx.save(); ctx.translate(-cameraX, 0); drawGame(); updateEnemies(); updateMovingPlatforms(); player.update(); player.draw(); ctx.restore();
-    
+    ctx.save(); ctx.translate(-cameraX, 0); drawGame(); updateEnemies(); updateMovingPlatforms(); updateFireballs(); if (!isPaused) updateCoinPopups(); updateFlagSequence(); player.update(); player.draw(); ctx.restore();
     if (reqId) cancelAnimationFrame(reqId); reqId = requestAnimationFrame(animate);
 }
 
-initQuestions(); createLevel(); updateScore(); updateHeartsUI(); animate();
+initQuestions(); createLevel(); updateScore(); updateHeartsUI(); updateCoinsUI(); animate();
 </script>
 </body>
 </html>
