@@ -38,9 +38,9 @@
     .ui-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 
     #settings-btn {
-        position: absolute; top: 15px; right: 15px; pointer-events: auto; cursor: pointer;
-        background: rgba(0,0,0,0.5); border: 2px solid #fff; color: #fff; border-radius: 50%;
-        width: 35px; height: 35px; font-size: 16px; display: flex; align-items: center; justify-content: center; z-index: 600;
+        position: absolute; top: 10px; right: 10px; pointer-events: auto; cursor: pointer;
+        background: rgba(0,0,0,0.6); border: 2px solid #fff; color: #fff; border-radius: 50%;
+        width: 32px; height: 32px; font-size: 14px; display: flex; align-items: center; justify-content: center; z-index: 600;
     }
 
     #game-over-screen, #quiz-screen, #start-screen, #life-lost-screen, #level-start-screen, #level-complete-screen, #settings-screen {
@@ -520,7 +520,6 @@ const player = {
                 e.alive = false; this.vy = -7; score += 100; updateScore(); AudioEngine.stomp();
             } else if (player.powerState !== 'small' && e.kind !== 'saw') {
                 e.alive = false; score += 100; updateScore(); AudioEngine.stomp();
-                popupMsg(e.x + e.width / 2, e.y - 10, '💥');
             } else {
                 let msg = "BİR CANLIYA ÇARPTIN! 👾";
                 if (e.kind === 'piranha') msg = "PİRANHA BİTKİSİ SENİ YEDİ! 🥀";
@@ -636,9 +635,15 @@ function addQuizAndGate(cx, qx, qy, qIndex) { const block = { x: qx, y: qy, widt
 function addCoinRow(startX, y, count, spacing) { for (let i = 0; i < count; i++) { coins.push({ x: startX + i * spacing, y: y, collected: false }); } }
 function addStaircase(startX, groundY, steps, cubeSize) { for (let s = 0; s < steps; s++) { const stepHeight = s + 1; const stepX = startX + s * cubeSize; for (let c = 0; c < stepHeight; c++) { platforms.push({ x: stepX, y: groundY - (c + 1) * cubeSize, width: cubeSize, height: cubeSize, type: 'solid' }); } } return startX + steps * cubeSize; }
 function addPyramid(startX, groundY, steps, cubeSize) { const upEnd = addStaircase(startX, groundY, steps, cubeSize); for (let s = 0; s < steps - 1; s++) { const stepHeight = steps - 1 - s; const stepX = upEnd + s * cubeSize; for (let c = 0; c < stepHeight; c++) { platforms.push({ x: stepX, y: groundY - (c + 1) * cubeSize, width: cubeSize, height: cubeSize, type: 'solid' }); } } return upEnd + (steps - 1) * cubeSize; }
-function giveCoin(x, y) { coinCount++; score += 10; updateScore(); coinPopups.push({ x: x, y: y, life: 0 }); try { AudioEngine.coin(); } catch(e) {} if (coinCount >= 100) { coinCount -= 100; if (player.lives < MAX_LIVES) { player.lives++; updateHeartsUI(); AudioEngine.powerup(); } else { score += 1000; updateScore(); AudioEngine.powerup(); } } updateCoinsUI(); }
+function giveCoin(x, y) { coinCount++; score += 10; updateScore(); coinPopups.push({ x: x, y: y, life: 0 }); try { AudioEngine.coin(); } catch(e) {} if (coinCount >= 100) { coinCount -= 100; if (player.lives < MAX_LIVES) { player.lives++; updateHeartsUI(); AudioEngine.powerup(); } } updateCoinsUI(); }
 
 function createLevel() {
+    // DÜZELTME: Karakteri doğarken her zaman zemin yüksekliğinde güvenli noktaya koy
+    player.x = 50; 
+    player.y = 350; 
+    player.vx = 0; 
+    player.vy = 0;
+    
     platforms.length = 0; enemies.length = 0; healthHearts.length = 0; coins.length = 0; powerups.length = 0; fireballs.length = 0; coinPopups.length = 0; checkpoints = []; checkpointIndex = 0; isInSecretRoom = false;
     
     if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } else { canvas.style.backgroundColor = '#5c94fc'; }
@@ -648,10 +653,13 @@ function createLevel() {
     let segmentsThisLevel = questionsForThisLevel * 2; 
     let powerupToggle = 0;
 
+    // Gizli Yeraltı Odası
     platforms.push({ x: 3000, y: 1400, width: 800, height: 50, type: 'ground' });
     platforms.push({ x: 3000, y: 1000, width: 50, height: 400, type: 'solid' }); 
     addCoinRow(3200, 1300, 10, 30); addCoinRow(3200, 1200, 10, 30);
     healthHearts.push({ x: 3400, y: 1100, collected: false });
+    
+    // Çıkış borusu
     platforms.push({ x: 3700, y: 1300, width: 48, height: 100, type: 'pipe', isExit: true, returnX: 800, returnY: 300 });
 
     for (let i = 0; i < segmentsThisLevel; i++) {
@@ -680,7 +688,10 @@ function createLevel() {
         }
         else if (type === 1) {
             platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 250, y: 340, width: 48, height: 80, type: 'pipe' });
+            
+            // Giriş borusuna sabit koordinat tanımı (returnX/Y tam yerine dönecek)
+            platforms.push({ x: cx + 250, y: 340, width: 48, height: 80, type: 'pipe', isEntrance: true, destX: 3100, destY: 1300 });
+            
             enemies.push({ kind: 'piranha', x: cx + 258, width: 32, height: 40, startY: 340, timer: 0, alive: true, stompable: false });
             platforms.push({ x: cx + 450, y: 300, width: 48, height: 120, type: 'pipe' });
             enemies.push({ kind: 'piranha', x: cx + 458, width: 32, height: 40, startY: 300, timer: 1.5, alive: true, stompable: false });
@@ -792,6 +803,7 @@ bindUIBtn('start-btn', (e) => {
     if (isStarted) return;
     SafeStorage.remove('kaponSaveData');
     AudioEngine.init();
+    createLevel();
     startLevelTransition();
 });
 
@@ -872,90 +884,25 @@ function drawGame() {
         drawCastle(poleX + 150, 420); 
     }
 
+    platforms.forEach(p => {
+        if(p.destroyed) return; 
+        if (p.type === 'ground' || p.type === 'solid') { drawBrickTexture(p.x, p.y, p.width, p.height); } 
+        else if (p.type === 'brick') { drawBrickTexture(p.x, p.y, p.width, p.height); } 
+        else if (p.type === 'pipe') { ctx.fillStyle = '#008800'; ctx.fillRect(p.x, p.y, p.width, p.height); ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 5, p.y, 12, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height); ctx.fillStyle = '#008800'; ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 1, p.y, 12, 20); ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20); } 
+        else if (p.type === 'quizblock') { ctx.fillStyle = p.hit ? (currentLevelIndex % 2 === 0 ? '#0000a8' : '#c84c0c') : '#b026ff'; ctx.fillRect(p.x, p.y, p.width, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height); if (!p.hit) { ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); } } 
+        else if (p.type === 'gate' && !p.linked.hit) { ctx.save(); ctx.globalAlpha = 0.35 + 0.15 * Math.sin(Date.now() / 150); ctx.fillStyle = '#b026ff'; ctx.fillRect(p.x, isInSecretRoom?1000:0, p.width, canvas.height); ctx.restore(); }
+    });
+
     enemies.forEach(e => {
         if (!e.alive) return;
         if (e.kind === 'piranha') {
-            ctx.fillStyle = '#00a800'; ctx.fillRect(e.x+12, e.y+20, 8, 20); 
-            ctx.fillStyle = '#ff003c'; ctx.beginPath(); ctx.arc(e.x+16, e.y+10, 14, 0, Math.PI*2); ctx.fill(); 
-            ctx.fillStyle = '#fff'; ctx.fillRect(e.x+2, e.y+5, 28, 4); 
-            ctx.fillStyle = '#000'; ctx.fillRect(e.x+14, e.y+2, 4, 4); 
-        }
-        else if (e.kind === 'flyer') {
-            ctx.fillStyle = '#7a2a8a'; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.moveTo(e.x, e.y + 10); ctx.lineTo(e.x - 12, e.y + 2); ctx.lineTo(e.x, e.y + 18); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(e.x + e.width, e.y + 10); ctx.lineTo(e.x + e.width + 12, e.y + 2); ctx.lineTo(e.x + e.width, e.y + 18); ctx.fill();
-            ctx.fillStyle = '#ff003c'; ctx.fillRect(e.x + 6, e.y + 8, 4, 4); ctx.fillRect(e.x + 14, e.y + 8, 4, 4);
-        }
-        else if (e.kind === 'koopa') {
-            if (e.state === 'shell') {
-                ctx.fillStyle = '#00a800'; ctx.fillRect(e.x, e.y + e.height - 18, e.width, 18);
-                ctx.strokeStyle = '#000'; ctx.strokeRect(e.x, e.y + e.height - 18, e.width, 18);
-                ctx.fillStyle = '#00d000'; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height - 9, 7, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = '#005800'; ctx.beginPath(); ctx.moveTo(e.x + 4, e.y + e.height - 9); ctx.lineTo(e.x + e.width - 4, e.y + e.height - 9); ctx.stroke();
-            } else {
-                ctx.fillStyle = '#00a800'; ctx.fillRect(e.x, e.y + 8, e.width, e.height - 8);
-                ctx.strokeStyle = '#000'; ctx.strokeRect(e.x, e.y + 8, e.width, e.height - 8);
-                ctx.fillStyle = '#00d000'; ctx.fillRect(e.x + 3, e.y + 11, e.width - 6, e.height - 14);
-                ctx.fillStyle = '#ffd400'; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + 4, 7, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#000'; ctx.fillRect(e.x + e.width / 2 - 4, e.y + 2, 2, 2); ctx.fillRect(e.x + e.width / 2 + 2, e.y + 2, 2, 2);
-                ctx.fillStyle = '#ffd400'; ctx.fillRect(e.x - 3, e.y + e.height - 6, 6, 6); ctx.fillRect(e.x + e.width - 3, e.y + e.height - 6, 6, 6);
-            }
-        }
-        else if (e.kind === 'spiny') {
+            ctx.fillStyle = '#00a800'; ctx.fillRect(e.x+12, e.y+20, 8, 20); ctx.fillStyle = '#ff003c'; ctx.beginPath(); ctx.arc(e.x+16, e.y+10, 14, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(e.x+2, e.y+5, 28, 4); ctx.fillStyle = '#000'; ctx.fillRect(e.x+14, e.y+2, 4, 4); 
+        } else if (e.kind === 'spiny') {
             ctx.fillStyle = '#ff003c'; ctx.beginPath(); ctx.arc(e.x+12, e.y+24, 12, Math.PI, 0); ctx.fill();
             ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(e.x+4, e.y+12); ctx.lineTo(e.x+8, e.y+4); ctx.lineTo(e.x+12, e.y+12); ctx.fill(); ctx.beginPath(); ctx.moveTo(e.x+12, e.y+12); ctx.lineTo(e.x+16, e.y+4); ctx.lineTo(e.x+20, e.y+12); ctx.fill();
             ctx.fillStyle = '#ffcc99'; ctx.fillRect(e.x+2, e.y+20, 6, 4); ctx.fillStyle = '#000'; ctx.fillRect(e.x+4, e.y+22, 2, 2);
-        }
-        else {
-            const gx = e.x, gy = e.y, gw = e.width, gh = e.height;
-            ctx.fillStyle = '#8b4513'; ctx.beginPath(); ctx.moveTo(gx, gy + gh * 0.55); ctx.arc(gx + gw / 2, gy + gh * 0.42, gw / 2, Math.PI, 0); ctx.lineTo(gx + gw, gy + gh * 0.55); ctx.quadraticCurveTo(gx + gw, gy + gh, gx + gw * 0.68, gy + gh); ctx.lineTo(gx + gw * 0.32, gy + gh); ctx.quadraticCurveTo(gx, gy + gh, gx, gy + gh * 0.55); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.stroke();
-            ctx.fillStyle = '#5c2e0a'; ctx.fillRect(gx + gw * 0.06, gy + gh - 6, gw * 0.32, 6); ctx.fillRect(gx + gw - gw * 0.38, gy + gh - 6, gw * 0.32, 6);
-            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(gx + gw * 0.32, gy + gh * 0.5, 5, 6, 0, 0, Math.PI * 2); ctx.ellipse(gx + gw * 0.68, gy + gh * 0.5, 5, 6, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(gx + gw * 0.32, gy + gh * 0.56, 2.2, 0, Math.PI * 2); ctx.arc(gx + gw * 0.68, gy + gh * 0.56, 2.2, 0, Math.PI * 2); ctx.fill();
-        }
-    });
-
-    platforms.forEach(p => {
-        if(p.destroyed) return; 
-        
-        if (p.type === 'ground') {
-            if(currentLevelIndex % 2 === 0 || p.y > 600) {
-                ctx.fillStyle = '#0000a8'; ctx.fillRect(p.x, p.y + 10, p.width, p.height - 10); 
-                ctx.fillStyle = '#00d000'; ctx.fillRect(p.x, p.y, p.width, 10); 
-            } else {
-                ctx.fillStyle = '#c84c0c'; ctx.fillRect(p.x, p.y + 10, p.width, p.height - 10);
-                ctx.fillStyle = '#00a800'; ctx.fillRect(p.x, p.y, p.width, 10); 
-            }
-            ctx.fillStyle = '#000'; ctx.fillRect(p.x, p.y, p.width, 2); ctx.fillRect(p.x, p.y+10, p.width, 2); 
-            ctx.strokeRect(p.x, p.y, p.width, p.height);
-        } else if (p.type === 'brick' || p.type === 'solid') {
-            const bOff = p.bounce ? Math.min(p.bounce, 6) : 0;
-            drawBrickTexture(p.x, p.y - bOff, p.width, p.height);
-        } else if (p.type === 'pipe') {
-            ctx.fillStyle = '#008800'; ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 5, p.y, 12, p.height); 
-            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-            ctx.fillStyle = '#008800'; ctx.fillRect(p.x - 4, p.y, p.width + 8, 20); 
-            ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 1, p.y, 12, 20); 
-            ctx.strokeRect(p.x - 4, p.y, p.width + 8, 20);
-        } else if (p.type === 'quizblock') {
-            ctx.fillStyle = p.hit ? (currentLevelIndex % 2 === 0 || p.y > 600 ? '#0000a8' : '#c84c0c') : '#b026ff'; ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-            if (!p.hit) { ctx.fillStyle = '#fff'; ctx.font = '22px monospace'; ctx.fillText('?', p.x + 10, p.y + 25); }
-        } else if (p.type === 'moving') {
-            ctx.fillStyle = '#ffd400'; ctx.fillRect(p.x, p.y, p.width, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-        } else if (p.type === 'gate' && !p.linked.hit) {
-            ctx.save(); ctx.globalAlpha = 0.35 + 0.15 * Math.sin(Date.now() / 150); ctx.fillStyle = '#b026ff'; ctx.fillRect(p.x, isInSecretRoom?1000:0, p.width, canvas.height); ctx.restore();
-        } else if (p.type === 'spike') {
-            const spikeCount = Math.max(1, Math.floor(p.width / 16)); const sw = p.width / spikeCount; ctx.fillStyle = '#9a9a9a';
-            for (let s = 0; s < spikeCount; s++) { ctx.beginPath(); ctx.moveTo(p.x + s * sw, p.y + p.height); ctx.lineTo(p.x + s * sw + sw / 2, p.y); ctx.lineTo(p.x + s * sw + sw, p.y + p.height); ctx.closePath(); ctx.fill(); }
-        } else if (p.type === 'coinbox') {
-            const bOff = p.bounce ? Math.min(p.bounce, 6) : 0; const by = p.y - bOff;
-            if (!p.hit) {
-                const pulse = 0.55 + 0.45 * Math.abs(Math.sin(Date.now() / 220)); ctx.save(); ctx.globalAlpha = pulse; ctx.fillStyle = '#fbd000'; ctx.fillRect(p.x, by, p.width, p.height); ctx.restore(); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, by, p.width, p.height); ctx.fillStyle = '#fff'; ctx.font = 'bold 20px monospace'; ctx.fillText('?', p.x + 10, by + 24);
-            } else {
-                ctx.fillStyle = '#c88a3c'; ctx.fillRect(p.x, by, p.width, p.height); ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, by, p.width, p.height); ctx.strokeStyle = '#8a5a20'; ctx.strokeRect(p.x + 4, by + 4, p.width - 8, p.height - 8);
-            }
+        } else {
+            ctx.fillStyle = '#8b4513'; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.fillStyle = '#ffcc99'; ctx.fillRect(e.x, e.y + 20, 8, 4); ctx.fillRect(e.x + 16, e.y + 20, 8, 4); ctx.fillStyle = '#fff'; ctx.fillRect(e.x + 4, e.y + 6, 6, 8); ctx.fillRect(e.x + 14, e.y + 6, 6, 8); ctx.fillStyle = '#000'; ctx.fillRect(e.x + 6, e.y + 10, 2, 2); ctx.fillRect(e.x + 16, e.y + 10, 2, 2);
         }
     });
 
@@ -994,6 +941,9 @@ function drawGame() {
     particles.forEach((p, i) => {
         p.x += p.vx; p.y += p.vy; p.vy += 0.5; ctx.fillStyle = currentLevelIndex % 2 === 0 ? '#0000a8' : '#c84c0c'; ctx.fillRect(p.x, p.y, 8, 8); if (p.y > (isInSecretRoom ? 2000 : 600)) particles.splice(i, 1);
     });
+
+    // MARIO EN ÜST KATMANA ALINDI (Boruların önünde duracak)
+    player.draw();
 }
 
 /* ============== UI VE CAN SİSTEMİ ============== */
@@ -1051,7 +1001,7 @@ function animate() {
     let targetCamX = player.x - canvas.width / 2 + player.width / 2; if (targetCamX < 0) targetCamX = 0;
     const maxCam = poleX ? poleX + 400 - canvas.width / 2 : 3500; if (!isInSecretRoom && targetCamX > maxCam) targetCamX = maxCam;
     cameraX = targetCamX;
-    ctx.save(); ctx.translate(-cameraX, 0); drawGame(); updateEnemies(); updateMovingPlatforms(); updateFireballs(); if (!isPaused) updateCoinPopups(); updateFlagSequence(); player.update(); player.draw(); ctx.restore();
+    ctx.save(); ctx.translate(-cameraX, 0); drawGame(); updateEnemies(); updateMovingPlatforms(); updateFireballs(); if (!isPaused) updateCoinPopups(); updateFlagSequence(); player.update(); ctx.restore();
     if (reqId) cancelAnimationFrame(reqId); reqId = requestAnimationFrame(animate);
 }
 
