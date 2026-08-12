@@ -208,7 +208,7 @@ let currentLevelIndex = 1;
 const questionsPerLevel = [3, 3, 3, 4]; 
 let globalQIndex = 0; 
 
-/* ============== SES MOTORU (Çökmeye Karşı Korumalı) ============== */
+/* ============== SES MOTORU ============== */
 const AudioEngine = {
     ctx: null, master: null,
     init() {
@@ -256,7 +256,7 @@ const AudioEngine = {
     coin() { this.tone(988, 0.08, 'square', 0.5); this.tone(1318, 0.18, 'square', 0.4, 0.06); }
 };
 
-/* ============== MÜZİK MOTORU (8-bit döngü çalar) ============== */
+/* ============== MÜZİK MOTORU ============== */
 const Music = {
     isPlaying: false, intervalId: null, current: null, step: 0, nextTime: 0, bpm: 150,
     tracks: {
@@ -300,7 +300,7 @@ const Music = {
 };
 function trackForLevel(idx) { return ['overworld', 'night', 'underground', 'castle'][(idx - 1) % 4] || 'overworld'; }
 
-/* ============== MOBİL UYUMLU BAĞLAYICILAR (Çarpışma & Tıklama Çözümü) ============== */
+/* ============== MOBİL UYUMLU BAĞLAYICILAR ============== */
 function bindUIBtn(id, action) {
     const btn = document.getElementById(id);
     if(!btn) return;
@@ -355,7 +355,7 @@ const btnLeft = document.getElementById('btn-left'); const btnRight = document.g
 bindControl(btnLeft, true); bindControl(btnLeft, false); bindControl(btnRight, true); bindControl(btnRight, false); bindControl(btnJump, true); bindControl(btnJump, false); bindControl(btnFire, true); bindControl(btnFire, false); bindControl(btnDown, true); bindControl(btnDown, false);
 function updateFireButtonVisibility() { btnFire.style.display = (player.powerState === 'fire') ? 'flex' : 'none'; }
 
-/* ============== KAYIT SİSTEMİ (SAVE) ============== */
+/* ============== KAYIT SİSTEMİ ============== */
 const SAVE_KEY = 'kaponSaveV1';
 function saveGame() {
     try {
@@ -469,12 +469,10 @@ function drawMapGrassTuft(x, y, sway) {
 }
 function drawMapBackground() {
     const t = Date.now();
-    // Gökyüzü
     const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
     skyGrad.addColorStop(0, '#1f8fe0'); skyGrad.addColorStop(1, '#7cd0fc');
     ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Arka planda uzak yıldızlar (hafif parıltı)
     ctx.save();
     for (let i = 0; i < 18; i++) {
         const sx = (i * 137) % canvas.width; const sy = (i * 71) % 140;
@@ -484,7 +482,6 @@ function drawMapBackground() {
     }
     ctx.restore();
 
-    // Hareket eden bulutlar
     for (let i = 0; i < 6; i++) {
         const speed = 12 + (i % 3) * 6;
         const baseY = 40 + (i % 4) * 40;
@@ -492,7 +489,6 @@ function drawMapBackground() {
         drawMapCloud(cx, baseY, 0.8 + (i % 3) * 0.25);
     }
 
-    // Uçuşan kuşlar
     for (let i = 0; i < 3; i++) {
         const speed = 30 + i * 10;
         const bx = ((t / (1000 / speed)) + i * 300) % (canvas.width + 60) - 30;
@@ -506,14 +502,12 @@ function drawMapBackground() {
     ctxRoundRect(minX, minY, maxX - minX, maxY - minY - 25, 40); ctx.fillStyle = '#00a800'; ctx.fill();
     ctx.strokeStyle = '#004d00'; ctx.lineWidth = 3; ctx.stroke();
 
-    // Sallanan otlar kenarlarda
     const sway = Math.sin(t / 500) * 3;
     for (let i = 0; i < 14; i++) {
         const gx = minX + 14 + i * ((maxX - minX - 28) / 13);
         drawMapGrassTuft(gx, minY + 2, sway);
     }
 
-    // Çiçekler
     for (let i = 0; i < 9; i++) {
         const fx = minX + 30 + (i * 71) % (maxX - minX - 60);
         const fy = maxY - 14 - ((i * 53) % 20);
@@ -590,7 +584,7 @@ function enterLevelFromMap(lvl) {
     onMap = false; currentLevelIndex = lvl;
     player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.isDead = false; player.levelFinished = false; flagSeq = null;
     player.powerState = 'small'; player.width = 36; player.height = 48; player.invincible = 0; player.starPower = 0;
-    player.hasDoubleJump = false; player.airJumpUsed = false;
+    player.hasDoubleJump = false; player.airJumpUsed = false; player.powerTimer = 0; player.doubleJumpTimer = 0;
     updateFireButtonVisibility();
     levelStartTime = Date.now(); coinsCollectedThisLevel = 0; livesAtLevelStart = player.lives;
     createLevel(); startLevelTransition();
@@ -643,18 +637,15 @@ function drawMario(x, y, isJumping, direction, walkToggle, big, fire) {
 }
 
 function drawCloud(x, y) {
-    if(currentLevelIndex % 2 === 0) return; 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; ctx.beginPath(); ctx.arc(x + 20, y + 15, 15, 0, Math.PI * 2); ctx.arc(x + 45, y + 5, 20, 0, Math.PI * 2); ctx.arc(x + 70, y + 15, 15, 0, Math.PI * 2); ctx.fillRect(x + 20, y + 5, 50, 25); ctx.fill();
 }
 function drawHill(x, y, size) {
-    if(currentLevelIndex % 2 === 0) return; 
     ctx.fillStyle = '#00a800'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + size / 2, y - size / 1.5); ctx.lineTo(x + size, y); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = '#00d000'; ctx.beginPath(); ctx.moveTo(x + 10, y); ctx.lineTo(x + size / 2, y - size / 1.5 + 10); ctx.lineTo(x + size / 2 + 10, y - size / 1.5 + 10); ctx.lineTo(x + 25, y); ctx.fill();
 }
 function drawBrickTexture(x, y, w, h) {
-    const dark = currentLevelIndex % 2 === 0;
-    const base = dark ? '#0000a8' : '#c84c0c';
-    const mortar = dark ? '#5858e0' : '#f8a878';
+    const base = '#c84c0c';
+    const mortar = '#f8a878';
     ctx.fillStyle = base; ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = mortar; ctx.lineWidth = 2;
     const rowH = h / 4;
@@ -682,6 +673,7 @@ const player = {
     lives: MAX_LIVES, walkTimer: 0, walkToggle: false, standingOn: null,
     powerState: 'small', invincible: 0, firePrev: false,
     starPower: 0, hasDoubleJump: false, airJumpUsed: false, jumpPrev: false,
+    powerTimer: 0, doubleJumpTimer: 0,
 
     update() {
         if (this.isDead || isPaused || !isStarted || this.levelFinished) return;
@@ -705,6 +697,20 @@ const player = {
 
         if (this.invincible > 0) this.invincible--;
         if (this.starPower > 0) { this.starPower--; if (this.starPower === 0) { try { Music.play(trackForLevel(currentLevelIndex)); } catch(e) {} } }
+        if (this.powerState !== 'small' && this.powerTimer > 0) {
+            this.powerTimer--;
+            if (this.powerTimer <= 0) {
+                const prevH = this.height, prevW = this.width;
+                this.powerState = 'small'; applyPowerSize(prevH, prevW);
+                updateFireButtonVisibility();
+                popupMsg(this.x + this.width / 2, this.y - 10, 'GÜÇ BİTTİ! 🍂');
+                try { AudioEngine.wrong(); } catch(e) {}
+            }
+        }
+        if (this.hasDoubleJump && this.doubleJumpTimer > 0) {
+            this.doubleJumpTimer--;
+            if (this.doubleJumpTimer <= 0) { this.hasDoubleJump = false; popupMsg(this.x + this.width / 2, this.y - 10, '🪽 BİTTİ!'); }
+        }
         if (keys.fire && !this.firePrev) shootFireball();
         this.firePrev = keys.fire;
 
@@ -717,14 +723,21 @@ const player = {
         }
 
         if (this.pipeCooldown > 0) this.pipeCooldown--;
-        if (keys.down && this.grounded && this.standingOn && this.standingOn.type === 'pipe-h' && !this.pipeCooldown) {
-            const p = this.standingOn;
-            this.x = p.targetX; this.y = p.targetY; this.vx = 0; this.vy = 0; this.grounded = false; this.standingOn = null;
-            activeRoom = (p.pipeRole === 'enter') ? 'bonus' : 'main';
-            this.pipeCooldown = 25;
-            try { AudioEngine.tone(320, 0.15, 'square', 0.3); AudioEngine.tone(220, 0.15, 'square', 0.3, 0.1); } catch(e) {}
-            popupMsg(this.x, this.y - 10, activeRoom === 'bonus' ? '🚪 GİZLİ ODA!' : '🚪 GERİ DÖNDÜN!');
-            return;
+        if (!this.pipeCooldown) {
+            for (let i = 0; i < platforms.length; i++) {
+                const p = platforms[i];
+                if (p.type !== 'pipe-h') continue;
+                const mouthW = 26;
+                if (this.vx > 0 && this.x + this.width > p.x && this.x + this.width < p.x + mouthW + 10 &&
+                    this.y + this.height > p.y - 4 && this.y < p.y + p.height + 4) {
+                    this.x = p.targetX; this.y = p.targetY; this.vx = 0; this.vy = 0; this.grounded = false; this.standingOn = null;
+                    activeRoom = (p.pipeRole === 'enter') ? 'bonus' : 'main';
+                    this.pipeCooldown = 30;
+                    try { AudioEngine.tone(320, 0.15, 'square', 0.3); AudioEngine.tone(220, 0.15, 'square', 0.3, 0.1); } catch(e) {}
+                    popupMsg(this.x, this.y - 10, activeRoom === 'bonus' ? '🚪 GİZLİ ODA!' : '🚪 GERİ DÖNDÜN!');
+                    return;
+                }
+            }
         }
 
         for (let i = 0; i < healthHearts.length; i++) {
@@ -771,8 +784,6 @@ const player = {
                 if (e.state === 'walk') {
                     if (this.vy > 0 && wasAbove) {
                         e.state = 'shell'; e.vx = 0; e.moving = false; this.vy = -7; score += 100; updateScore(); AudioEngine.stomp();
-                    } else if (player.powerState !== 'small') {
-                        e.state = 'shell'; e.vx = 0; e.moving = false; score += 100; updateScore(); AudioEngine.stomp();
                     } else { hitByEnemy("BİR KAPLUMBAĞAYA ÇARPTIN! 🐢"); return; }
                 } else {
                     if (this.vy > 0 && wasAbove) {
@@ -780,8 +791,7 @@ const player = {
                         if (e.moving) { e.moving = false; e.vx = 0; } else { e.moving = true; e.vx = (this.x < e.x ? 3.2 : -3.2); }
                         score += 50; updateScore(); AudioEngine.stomp();
                     } else if (e.moving) {
-                        if (player.powerState !== 'small') { e.alive = false; score += 100; updateScore(); AudioEngine.stomp(); }
-                        else { hitByEnemy("KAYAN KAPLUMBAĞA KABUĞU ÇARPTI! 🐢"); return; }
+                        hitByEnemy("KAYAN KAPLUMBAĞA KABUĞU ÇARPTI! 🐢"); return; 
                     }
                     else { e.moving = true; e.vx = (this.x < e.x ? 3.2 : -3.2); AudioEngine.stomp(); }
                 }
@@ -790,15 +800,13 @@ const player = {
 
             if (e.stompable && this.vy > 0 && wasAbove) {
                 e.alive = false; this.vy = -7; score += 100; updateScore(); AudioEngine.stomp();
-            } else if (player.powerState !== 'small' && e.kind !== 'saw' && e.kind !== 'spiny') {
-                e.alive = false; score += 100; updateScore(); AudioEngine.stomp();
-                popupMsg(e.x + e.width / 2, e.y - 10, '💥');
             } else {
                 let msg = "BİR CANLIYA ÇARPTIN! 👾";
                 if (e.kind === 'piranha') msg = "PİRANHA BİTKİSİ SENİ YEDİ! 🥀";
                 else if (e.kind === 'saw') msg = "TESTEREYE ÇARPTIN! ⚙️";
                 else if (e.kind === 'flyer') msg = "UÇAN DÜŞMAN SENİ YAKALADI! 🦇";
                 else if (e.kind === 'spiny') msg = "DİKENLİ KAPLUMBAĞAYA ÇARPTIN! 🦔";
+                else if (e.kind === 'goomba') msg = "BİR MANTARA ÇARPTIN! 🍄";
                 hitByEnemy(msg); return;
             }
         }
@@ -822,7 +830,7 @@ const player = {
     checkCollisions(axis, prevPos) {
         for (let i = 0; i < platforms.length; i++) {
             let p = platforms[i];
-            if (p.destroyed || p.type === 'spike' || (p.type === 'gate' && p.linked.hit)) continue;
+            if (p.destroyed || p.type === 'spike' || p.type === 'pipe-h' || (p.type === 'gate' && p.linked.hit)) continue;
 
             if (this.x < p.x + p.width && this.x + this.width > p.x && this.y < p.y + p.height && this.y + this.height > p.y) {
                 if (axis === 'x') {
@@ -862,6 +870,7 @@ const player = {
     draw() {
         if (this.isDead) return;
         if (this.invincible > 0 && Math.floor(this.invincible / 4) % 2 === 0) return;
+        if (this.powerState !== 'small' && this.powerTimer > 0 && this.powerTimer < 120 && Math.floor(this.powerTimer / 6) % 2 === 0) return;
         if (this.starPower > 0) {
             const hue = (Date.now() / 8) % 360;
             ctx.save(); ctx.filter = `hue-rotate(${hue}deg) saturate(2.4) brightness(1.2)`;
@@ -890,7 +899,7 @@ function hitByEnemy(msg) {
     if (player.isDead || player.invincible > 0) return;
     if (player.powerState !== 'small') {
         const prevH = player.height, prevW = player.width;
-        player.powerState = (player.powerState === 'fire') ? 'big' : 'small';
+        player.powerState = 'small';
         applyPowerSize(prevH, prevW);
         player.invincible = 90;
         updateFireButtonVisibility();
@@ -907,17 +916,19 @@ function collectPowerup(pu) {
             const prevH = player.height, prevW = player.width; player.powerState = 'big'; applyPowerSize(prevH, prevW);
             AudioEngine.powerup(); popupMsg(pu.x, pu.y, '⭐ BÜYÜDÜN!');
         } else { score += 500; updateScore(); AudioEngine.powerup(); }
+        player.powerTimer = 1200;
     } else if (pu.type === 'fire') {
         if (player.powerState !== 'fire') {
             const prevH = player.height, prevW = player.width; player.powerState = 'fire'; applyPowerSize(prevH, prevW);
             AudioEngine.powerup(); popupMsg(pu.x, pu.y, '🔥 ATEŞ GÜCÜ!');
         } else { score += 500; updateScore(); AudioEngine.powerup(); }
+        player.powerTimer = 1200;
     } else if (pu.type === 'star') {
         player.starPower = 500;
         AudioEngine.powerup(); popupMsg(pu.x, pu.y, '⭐ DOKUNULMAZLIK!');
         try { Music.play('star'); } catch(e) {}
     } else if (pu.type === 'doublejump') {
-        player.hasDoubleJump = true;
+        player.hasDoubleJump = true; player.doubleJumpTimer = 900;
         AudioEngine.powerup(); popupMsg(pu.x, pu.y, '🪽 ÇİFT ZIPLAMA!');
     }
     updateFireButtonVisibility();
@@ -984,19 +995,39 @@ function addPyramid(startX, groundY, steps, cubeSize) {
 }
 
 function addSecretRoom(entryX, entryY) {
-    const enterPipe = { x: entryX, y: entryY, width: 56, height: 20, type: 'pipe-h', pipeRole: 'enter',
-        targetX: BONUS_OFFSET + 60, targetY: 350, retX: entryX + 90, retY: entryY - 40 };
+    const PIPE_LEN = 130, PIPE_H = 50;
+    const enterPipe = { x: entryX, y: entryY, width: PIPE_LEN, height: PIPE_H, type: 'pipe-h', pipeRole: 'enter',
+        targetX: BONUS_OFFSET + 40, targetY: 340, retX: entryX + PIPE_LEN + 60, retY: entryY };
     platforms.push(enterPipe);
 
     const bx = BONUS_OFFSET;
-    platforms.push({ x: bx, y: 420, width: 900, height: 80, type: 'solid' });
-    for (let i = 0; i < 5; i++) { addCoinRow(bx + 60 + i * 90, 340 - (i % 2) * 40, 3, 24); }
-    healthHearts.push({ x: bx + 420, y: 260, collected: false });
-    powerups.push({ x: bx + 700, y: 340, type: 'star', collected: false });
+    platforms.push({ x: bx, y: 420, width: 420, height: 80, type: 'solid' });
+    addCoinRow(bx + 40, 340, 5, 30);
+    platforms.push({ x: bx + 236, y: 260, width: 32, height: 32, type: 'coinbox', hit: false });
+    platforms.push({ x: bx + 268, y: 260, width: 32, height: 32, type: 'brick' });
 
-    const exitPipe = { x: bx + 800, y: 400, width: 56, height: 20, type: 'pipe-h', pipeRole: 'exit',
+    platforms.push({ x: bx + 480, y: 360, width: 90, height: 24, type: 'solid' });
+    platforms.push({ x: bx + 640, y: 300, width: 90, height: 24, type: 'solid' });
+    addCoinRow(bx + 660, 260, 3, 26);
+    platforms.push({ x: bx + 800, y: 360, width: 90, height: 24, type: 'solid' });
+    enemies.push({ x: bx + 815, y: 336, width: 22, height: 22, minX: bx + 800, maxX: bx + 880, vx: 1.6, groundY: 336, jvy: 0, alive: true, stompable: true, kind: 'jumper' });
+    platforms.push({ x: bx + 960, y: 420, width: 320, height: 80, type: 'solid' });
+    addCoinRow(bx + 1000, 340, 4, 30);
+
+    enemies.push({ kind: 'saw', x: bx + 1100, y: 384, width: 34, height: 34, minX: bx + 1030, maxX: bx + 1220, vx: 2.2, alive: true, stompable: false, rotation: 0 });
+    healthHearts.push({ x: bx + 1150, y: 260, collected: false });
+
+    platforms.push({ x: bx + 1400, y: 420, width: 250, height: 80, type: 'solid' });
+    enemies.push({ x: bx + 1460, y: 392, width: 26, height: 28, minX: bx + 1400, maxX: bx + 1600, vx: -1.5, alive: true, stompable: true, kind: 'koopa', state: 'walk', moving: false });
+
+    platforms.push({ x: bx + 1770, y: 420, width: 480, height: 80, type: 'solid' });
+    addCoinRow(bx + 1800, 340, 6, 30);
+    powerups.push({ x: bx + 1980, y: 330, type: 'star', collected: false });
+
+    const exitPipe = { x: bx + 2120, y: 370, width: PIPE_LEN, height: PIPE_H, type: 'pipe-h', pipeRole: 'exit',
         targetX: enterPipe.retX, targetY: enterPipe.retY };
     platforms.push(exitPipe);
+    platforms.push({ x: bx + 2120 + PIPE_LEN, y: 420, width: 200, height: 80, type: 'solid' });
 }
 
 function giveCoin(x, y) {
@@ -1015,121 +1046,83 @@ function createLevel() {
     platforms.length = 0; enemies.length = 0; healthHearts.length = 0; coins.length = 0; powerups.length = 0; fireballs.length = 0; coinPopups.length = 0; checkpoints = []; checkpointIndex = 0;
     activeRoom = 'main';
     
-    if(currentLevelIndex % 2 === 0) { canvas.style.backgroundColor = '#000000'; } 
-    else { canvas.style.backgroundColor = '#5c94fc'; }
+    canvas.style.backgroundColor = '#5c94fc'; 
 
     let cx = 0;
     let questionsForThisLevel = questionsPerLevel[currentLevelIndex - 1]; 
-    let segmentsThisLevel = questionsForThisLevel * 2; 
-    let powerupToggle = 0;
 
-    // Gizli bonus alanı: kimse görmeden, doğru anda zıplayınca bulunan gizli bir köşe. İçinde paralar ve bir kalp saklı.
     platforms.push({ x: 60, y: 280, width: 60, height: 18, type: 'solid', isSecret: true, secretFound: false });
     addCoinRow(68, 240, 4, 16);
     healthHearts.push({ x: 86, y: 216, collected: false });
 
-    for (let i = 0; i < segmentsThisLevel; i++) {
+    for (let i = 0; i < questionsForThisLevel; i++) {
         checkpoints.push({ x: cx + 20, y: 50 });
-        let type = globalQIndex % 4; 
-        let putQuestion = (i % 2 === 1); 
 
-        if (i % 3 === 2) {
-            const puTypes = ['mushroom', 'fire', 'star', 'doublejump'];
-            powerups.push({ x: cx + 520, y: 170, type: puTypes[powerupToggle % puTypes.length], collected: false });
-            powerupToggle++;
-        }
-
-        if (type === 0) {
-            platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 236, y: 260, width: 32, height: 32, type: 'coinbox', hit: false });
-            platforms.push({ x: cx + 268, y: 260, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 300, y: 260, width: 32, height: 32, type: 'brick' });
+        if (currentLevelIndex === 1) {
+            platforms.push({ x: cx, y: 420, width: 900, height: 50, type: 'ground' });
+            platforms.push({ x: cx + 250, y: 260, width: 32, height: 32, type: 'coinbox', hit: false });
             
-            if (putQuestion) { addQuizAndGate(cx, cx + 332, 260, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 332, y: 260, width: 32, height: 32, type: 'brick' }); }
-
-            platforms.push({ x: cx + 364, y: 260, width: 32, height: 32, type: 'brick' });
-            enemies.push({ x: cx + 500, y: 396, width: 24, height: 24, minX: cx + 450, maxX: cx + 650, vx: -3.4, alive: true, stompable: true, kind: 'goomba', fast: true });
-            enemies.push({ x: cx + 600, y: 392, width: 26, height: 28, minX: cx + 560, maxX: cx + 740, vx: 1.3, alive: true, stompable: true, kind: 'koopa', state: 'walk', moving: false });
-            enemies.push({ x: cx + 700, y: 396, y2: 0, width: 24, height: 24, minX: cx + 680, maxX: cx + 730, vx: 1.6, groundY: 396, jvy: 0, alive: true, stompable: true, kind: 'jumper' });
-            platforms.push({ x: cx + 760, y: 400, width: 40, height: 20, type: 'spike' });
-            addStaircase(cx + 800, 420, 4, 32);
-            addCoinRow(cx + 460, 300, 5, 34);
-            platforms.push({ x: cx + 150, y: 225, width: 32, height: 32, type: 'coinbox', hit: false });
-            platforms.push({ x: cx + 182, y: 225, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 214, y: 225, width: 32, height: 32, type: 'coinbox', hit: false });
-        }
-        else if (type === 1) {
-            platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 250, y: 340, width: 48, height: 80, type: 'pipe' });
-            enemies.push({ kind: 'piranha', x: cx + 258, width: 32, height: 40, startY: 340, timer: 0, alive: true, stompable: false });
-            platforms.push({ x: cx + 450, y: 300, width: 48, height: 120, type: 'pipe' });
-            enemies.push({ kind: 'piranha', x: cx + 458, width: 32, height: 40, startY: 300, timer: 1.5, alive: true, stompable: false });
+            addQuizAndGate(cx, cx + 450, 260, shuffledQuestions[globalQIndex]); globalQIndex++;
             
-            platforms.push({ x: cx + 636, y: 260, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 668, y: 260, width: 32, height: 32, type: 'coinbox', hit: false });
-            if (putQuestion) { addQuizAndGate(cx, cx + 700, 260, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 700, y: 260, width: 32, height: 32, type: 'brick' }); }
-
-            enemies.push({ x: cx + 850, y: 396, width: 24, height: 24, minX: cx + 750, maxX: cx + 1000, vx: -2, alive: true, stompable: true, kind: 'goomba' });
-            enemies.push({ kind: 'flyer', x: cx + 560, y: 150, width: 28, height: 20, minY: 120, maxY: 260, vy: 1.8, alive: true, stompable: true });
-            enemies.push({ x: cx + 780, y: 392, width: 26, height: 28, minX: cx + 750, maxX: cx + 900, vx: -1.3, alive: true, stompable: false, kind: 'spiny' });
-            addCoinRow(cx + 560, 340, 4, 32);
-            addPyramid(cx + 1000, 420, 3, 32);
-            platforms.push({ x: cx + 900, y: 225, width: 32, height: 32, type: 'coinbox', hit: false });
-            platforms.push({ x: cx + 932, y: 225, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 964, y: 225, width: 32, height: 32, type: 'coinbox', hit: false });
-        }
-        else if (type === 2) {
-            platforms.push({ x: cx, y: 420, width: 300, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 400, y: 360, width: 80, height: 20, type: 'moving', minY: 150, maxY: 380, vy: -1.5 });
-            platforms.push({ x: cx + 550, y: 420, width: 220, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 536, y: 260, width: 32, height: 32, type: 'coinbox', hit: false });
-            platforms.push({ x: cx + 568, y: 260, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 600, y: 260, width: 32, height: 32, type: 'brick' });
+            enemies.push({ x: cx + 550, y: 396, width: 24, height: 24, minX: cx + 500, maxX: cx + 700, vx: -2, alive: true, stompable: true, kind: 'goomba' });
+            if(i === 1) powerups.push({ x: cx + 350, y: 170, type: 'mushroom', collected: false });
             
-            if (putQuestion) { addQuizAndGate(cx, cx + 632, 260, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 632, y: 260, width: 32, height: 32, type: 'brick' }); }
-
-            platforms.push({ x: cx + 664, y: 260, width: 32, height: 32, type: 'brick' });
+            platforms.push({ x: cx + 1000, y: 420, width: 300, height: 50, type: 'ground' });
+            enemies.push({ x: cx + 1050, y: 392, width: 26, height: 28, minX: cx + 1000, maxX: cx + 1200, vx: 1.5, alive: true, stompable: true, kind: 'koopa', state: 'walk', moving: false });
+            
+            cx += 1400;
+        }
+        else if (currentLevelIndex === 2) {
+            platforms.push({ x: cx, y: 420, width: 500, height: 50, type: 'ground' });
+            platforms.push({ x: cx + 300, y: 340, width: 48, height: 80, type: 'pipe' });
+            enemies.push({ kind: 'piranha', x: cx + 308, width: 32, height: 40, startY: 340, timer: i, alive: true, stompable: false });
+            
+            addQuizAndGate(cx, cx + 550, 260, shuffledQuestions[globalQIndex]); globalQIndex++;
+            
+            platforms.push({ x: cx + 700, y: 420, width: 500, height: 50, type: 'ground' });
+            enemies.push({ kind: 'flyer', x: cx + 800, y: 180, width: 28, height: 20, minY: 100, maxY: 300, vy: 2.2, alive: true, stompable: true });
+            if(i === 0) powerups.push({ x: cx + 850, y: 220, type: 'fire', collected: false });
+            
+            cx += 1300;
+        }
+        else if (currentLevelIndex === 3) {
+            platforms.push({ x: cx, y: 420, width: 350, height: 50, type: 'ground' });
+            platforms.push({ x: cx + 450, y: 360, width: 80, height: 20, type: 'moving', minY: 150, maxY: 380, vy: -2 });
+            
+            platforms.push({ x: cx + 650, y: 420, width: 500, height: 50, type: 'ground' });
+            addQuizAndGate(cx, cx + 700, 260, shuffledQuestions[globalQIndex]); globalQIndex++;
+            
+            enemies.push({ kind: 'saw', x: cx + 800, y: 384, width: 36, height: 36, minX: cx + 700, maxX: cx + 950, vx: 3, alive: true, stompable: false, rotation: 0 });
+            enemies.push({ x: cx + 950, y: 392, width: 26, height: 28, minX: cx + 850, maxX: cx + 1100, vx: -1.8, alive: true, stompable: false, kind: 'spiny' });
+            
+            if(i === 2) powerups.push({ x: cx + 750, y: 150, type: 'doublejump', collected: false });
+            
+            cx += 1250;
+        }
+        else if (currentLevelIndex === 4) {
+            platforms.push({ x: cx, y: 420, width: 200, height: 50, type: 'ground' });
+            platforms.push({ x: cx + 300, y: 320, width: 60, height: 20, type: 'moving', minY: 200, maxY: 400, vy: -2.8 });
+            platforms.push({ x: cx + 450, y: 420, width: 250, height: 50, type: 'ground' });
+            
+            enemies.push({ x: cx + 500, y: 396, width: 24, height: 24, minX: cx + 450, maxX: cx + 650, vx: -3.5, alive: true, stompable: true, kind: 'goomba', fast: true });
+            
+            addQuizAndGate(cx, cx + 600, 180, shuffledQuestions[globalQIndex]); globalQIndex++;
+            
             platforms.push({ x: cx + 800, y: 420, width: 400, height: 50, type: 'ground' });
-            enemies.push({ kind: 'saw', x: cx + 700, y: 384, width: 36, height: 36, minX: cx + 650, maxX: cx + 770, vx: 2, alive: true, stompable: false, rotation: 0 });
-            enemies.push({ x: cx + 250, y: 396, width: 22, height: 22, minX: cx + 200, maxX: cx + 300, vx: 1.8, groundY: 396, jvy: 0, alive: true, stompable: true, kind: 'jumper' });
-            addCoinRow(cx + 400, 300, 3, 40);
-            addPyramid(cx + 840, 420, 4, 32);
-            platforms.push({ x: cx + 1080, y: 225, width: 32, height: 32, type: 'coinbox', hit: false });
-            platforms.push({ x: cx + 1112, y: 225, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 1144, y: 225, width: 32, height: 32, type: 'coinbox', hit: false });
-        }
-        else if (type === 3) {
-            platforms.push({ x: cx, y: 420, width: 1200, height: 50, type: 'ground' });
-            platforms.push({ x: cx + 200, y: 260, width: 32, height: 32, type: 'brick' }); platforms.push({ x: cx + 232, y: 260, width: 32, height: 32, type: 'brick' }); platforms.push({ x: cx + 264, y: 260, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 296, y: 260, width: 32, height: 32, type: 'coinbox', hit: false }); platforms.push({ x: cx + 328, y: 260, width: 32, height: 32, type: 'brick' });
+            enemies.push({ kind: 'saw', x: cx + 900, y: 384, width: 36, height: 36, minX: cx + 800, maxX: cx + 1150, vx: 3.5, alive: true, stompable: false, rotation: 0 });
+            enemies.push({ x: cx + 1050, y: 392, width: 26, height: 28, minX: cx + 950, maxX: cx + 1150, vx: -2.5, alive: true, stompable: true, kind: 'koopa', state: 'walk', moving: false });
             
-            if (putQuestion) { addQuizAndGate(cx, cx + 550, 150, shuffledQuestions[globalQIndex]); globalQIndex++; } 
-            else { platforms.push({ x: cx + 550, y: 150, width: 32, height: 32, type: 'brick' }); }
-
-            platforms.push({ x: cx + 534, y: 280, width: 64, height: 32, type: 'solid' }); 
-            enemies.push({ x: cx + 300, y: 396, width: 24, height: 24, minX: cx + 200, maxX: cx + 500, vx: -3.6, alive: true, stompable: true, kind: 'goomba', fast: true });
-            enemies.push({ x: cx + 950, y: 392, width: 26, height: 28, minX: cx + 900, maxX: cx + 1050, vx: -1.4, alive: true, stompable: true, kind: 'koopa', state: 'walk', moving: false });
-            enemies.push({ x: cx + 620, y: 392, width: 26, height: 28, minX: cx + 600, maxX: cx + 700, vx: -1.2, alive: true, stompable: false, kind: 'spiny' });
-            platforms.push({ x: cx + 650, y: 400, width: 40, height: 20, type: 'spike' });
-            addCoinRow(cx + 210, 200, 3, 32);
-            addPyramid(cx + 750, 420, 3, 32);
-            platforms.push({ x: cx + 850, y: 200, width: 32, height: 32, type: 'coinbox', hit: false });
-            platforms.push({ x: cx + 882, y: 200, width: 32, height: 32, type: 'brick' });
-            platforms.push({ x: cx + 914, y: 200, width: 32, height: 32, type: 'coinbox', hit: false });
+            if(i === 1) powerups.push({ x: cx + 550, y: 80, type: 'star', collected: false });
+            
+            cx += 1300;
         }
-
-        if (i % 3 === 1) { healthHearts.push({ x: cx + 300, y: 120, collected: false }); }
-
-        cx += 1200 + 130;
     }
     
     platforms.push({ x: cx, y: 420, width: 1000, height: 50, type: 'ground' }); 
-    addSecretRoom(cx + 40, 400);
-    addStaircase(cx + 140, 420, 8, 32);
-    poleX = cx + 140 + 8 * 32 + 90;
+    addSecretRoom(cx + 40, 370);
+    addStaircase(cx + 220, 420, 8, 32);
+    poleX = cx + 220 + 8 * 32 + 90;
+    
     enemies.forEach(e => { e.startX = e.x; e.startY = e.y; e.startVx = e.vx; if (e.kind === 'koopa' && !e.state) e.state = 'walk'; if (e.kind === 'saw' && e.rotation === undefined) e.rotation = 0; });
     
     document.getElementById('world-label').innerText = `1-${currentLevelIndex}`;
@@ -1256,14 +1249,14 @@ function triggerQuiz(blockInfo) {
 bindUIBtn('quiz-submit', (e) => { e.preventDefault(); checkTypedAnswer(); });
 quizInput.addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); checkTypedAnswer(); }});
 
-function normalizeText(s) { return s.toLowerCase().trim().replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/i̇/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u'); }
+function normalizeText(s) { return s.toLowerCase().trim().replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/i̇/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/[^a-z0-9]/g, ''); }
 
 function checkTypedAnswer() {
     if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') { try { AudioEngine.ctx.resume(); } catch(e) {} }
     const userAnswer = normalizeText(quizInput.value);
     if (userAnswer.length < 1) return; 
 
-    if(userAnswer === "seni seviyorum" || userAnswer === "seni cok seviyorum") {
+    if(userAnswer === "seniseviyorum" || userAnswer === "senicokseviyorum") {
         quizScreen.style.display = 'none'; resetKeys(); currentQuizBlock.hit = true;
         if(player.lives < MAX_LIVES) { player.lives++; updateHeartsUI(); AudioEngine.powerup(); alert("Gizli Şifre Bulundu! 💖\nKerem de seni çok seviyor... +1 Can kazandın!"); } 
         else { score += 1000; updateScore(); AudioEngine.powerup(); alert("Gizli Şifre Bulundu! 💖\nKerem de seni çok seviyor..."); }
@@ -1271,7 +1264,10 @@ function checkTypedAnswer() {
     }
 
     const quizData = questionsData[currentQuizBlock.qIndex];
-    let isCorrect = quizData.answers.some(ans => { if (userAnswer === ans || userAnswer.includes(ans)) return true; return false; });
+    let isCorrect = quizData.answers.some(ans => { 
+        const normAns = normalizeText(ans);
+        if (userAnswer === normAns || userAnswer.includes(normAns)) return true; return false; 
+    });
 
     quizScreen.style.display = 'none'; resetKeys();
     if (isCorrect) { currentQuizBlock.hit = true; score += 500; updateScore(); isPaused = false; AudioEngine.correct(); giveCoin(currentQuizBlock.x + currentQuizBlock.width / 2 - 8, currentQuizBlock.y - 12); } 
@@ -1279,6 +1275,39 @@ function checkTypedAnswer() {
 }
 
 /* ============== ÇİZİM ============== */
+function drawTurtleBody(e, spiky) {
+    const dir = (e.vx < 0) ? -1 : 1;
+    const bx = e.x, by = e.y, bw = e.width, bh = e.height;
+    ctx.fillStyle = '#ffd400';
+    ctx.fillRect(bx + 3, by + bh - 7, 7, 7); ctx.fillRect(bx + bw - 10, by + bh - 7, 7, 7);
+    const headCx = dir > 0 ? bx + bw - 1 : bx + 1;
+    ctx.fillStyle = '#3fc23f';
+    ctx.beginPath(); ctx.ellipse(headCx, by + bh * 0.5, 9, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#1e6b1e'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(headCx + dir * 2, by + bh * 0.42, 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(headCx + dir * 3, by + bh * 0.42, 1.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = spiky ? '#2f8f2f' : '#00a800';
+    ctx.beginPath(); ctx.ellipse(bx + bw / 2, by + bh * 0.42, bw / 2 - 1, bh * 0.4, 0, Math.PI, 0); ctx.fill();
+    ctx.fillRect(bx + 2, by + bh * 0.4, bw - 4, bh * 0.48);
+    ctx.strokeStyle = '#004d00'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.strokeRect(bx + 2, by + bh * 0.4, bw - 4, bh * 0.48);
+    ctx.strokeStyle = '#006400'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(bx + bw * 0.5, by + bh * 0.08); ctx.lineTo(bx + bw * 0.5, by + bh * 0.86);
+    ctx.moveTo(bx + bw * 0.18, by + bh * 0.28); ctx.lineTo(bx + bw * 0.82, by + bh * 0.28);
+    ctx.moveTo(bx + bw * 0.12, by + bh * 0.58); ctx.lineTo(bx + bw * 0.88, by + bh * 0.58);
+    ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.25;
+    ctx.beginPath(); ctx.ellipse(bx + bw * 0.35, by + bh * 0.22, bw * 0.14, bh * 0.08, -0.4, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+    if (spiky) {
+        ctx.fillStyle = '#ff003c';
+        for (let sp = 0; sp < 4; sp++) {
+            const spx = bx + bw * 0.14 + sp * (bw * 0.24);
+            ctx.beginPath(); ctx.moveTo(spx - 4, by + bh * 0.18); ctx.lineTo(spx, by - 5); ctx.lineTo(spx + 4, by + bh * 0.18); ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = '#8a0020'; ctx.lineWidth = 1; ctx.stroke();
+        }
+    }
+}
 function drawGame() {
     for (let i = 0; i < 40; i++) { drawCloud(150 + i * 400, 60 + (i % 3) * 30); }
     for (let i = 0; i < 20; i++) { drawHill(250 + i * 600, 420, 150); drawHill(500 + i * 600, 420, 90); }
@@ -1312,12 +1341,7 @@ function drawGame() {
                 ctx.strokeStyle = '#005800'; ctx.beginPath(); ctx.moveTo(e.x + 4, e.y + e.height - 9); ctx.lineTo(e.x + e.width - 4, e.y + e.height - 9); ctx.stroke();
                 if (e.moving) { ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.moveTo(e.x - 6 * Math.sign(e.vx || 1), e.y + e.height - 9); ctx.lineTo(e.x, e.y + e.height - 9); ctx.stroke(); }
             } else {
-                ctx.fillStyle = '#00a800'; ctx.fillRect(e.x, e.y + 8, e.width, e.height - 8);
-                ctx.strokeStyle = '#000'; ctx.strokeRect(e.x, e.y + 8, e.width, e.height - 8);
-                ctx.fillStyle = '#00d000'; ctx.fillRect(e.x + 3, e.y + 11, e.width - 6, e.height - 14);
-                ctx.fillStyle = '#ffd400'; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + 4, 7, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#000'; ctx.fillRect(e.x + e.width / 2 - 4, e.y + 2, 2, 2); ctx.fillRect(e.x + e.width / 2 + 2, e.y + 2, 2, 2);
-                ctx.fillStyle = '#ffd400'; ctx.fillRect(e.x - 3, e.y + e.height - 6, 6, 6); ctx.fillRect(e.x + e.width - 3, e.y + e.height - 6, 6, 6);
+                drawTurtleBody(e, false);
             }
         }
         else if (e.kind === 'saw') {
@@ -1337,16 +1361,7 @@ function drawGame() {
             ctx.restore();
         }
         else if (e.kind === 'spiny') {
-            ctx.fillStyle = '#00a800'; ctx.fillRect(e.x, e.y + 8, e.width, e.height - 8);
-            ctx.strokeStyle = '#000'; ctx.strokeRect(e.x, e.y + 8, e.width, e.height - 8);
-            ctx.fillStyle = '#c8ffc8'; ctx.fillRect(e.x + 3, e.y + 11, e.width - 6, e.height - 14);
-            ctx.fillStyle = '#ff003c';
-            for (let sp = 0; sp < 4; sp++) {
-                const spx = e.x + 3 + sp * ((e.width - 6) / 3);
-                ctx.beginPath(); ctx.moveTo(spx - 4, e.y + 10); ctx.lineTo(spx, e.y - 3); ctx.lineTo(spx + 4, e.y + 10); ctx.closePath(); ctx.fill();
-            }
-            ctx.fillStyle = '#ffd400'; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height - 4, 6, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#000'; ctx.fillRect(e.x + e.width / 2 - 4, e.y + e.height - 6, 2, 2); ctx.fillRect(e.x + e.width / 2 + 2, e.y + e.height - 6, 2, 2);
+            drawTurtleBody(e, true);
         }
         else if (e.kind === 'jumper') {
             const gx = e.x, gy = e.y, gw = e.width, gh = e.height;
@@ -1413,19 +1428,25 @@ function drawGame() {
         } else if (p.type === 'pipe-h') {
             const glowP = 0.5 + 0.5 * Math.abs(Math.sin(Date.now() / 260));
             ctx.save();
-            const gcx = p.x + p.width / 2, gcy = p.y + p.height / 2;
-            const gg = ctx.createRadialGradient(gcx, gcy, 2, gcx, gcy, 34);
-            gg.addColorStop(0, `rgba(120, 255, 160, ${0.4 * glowP})`); gg.addColorStop(1, 'rgba(120,255,160,0)');
-            ctx.fillStyle = gg; ctx.fillRect(p.x - 20, p.y - 20, p.width + 40, p.height + 40);
+            const gcx = p.x + 14, gcy = p.y + p.height / 2;
+            const gg = ctx.createRadialGradient(gcx, gcy, 2, gcx, gcy, 44);
+            gg.addColorStop(0, `rgba(120, 255, 160, ${0.45 * glowP})`); gg.addColorStop(1, 'rgba(120,255,160,0)');
+            ctx.fillStyle = gg; ctx.fillRect(p.x - 28, p.y - 28, p.width + 56, p.height + 56);
             ctx.restore();
-            ctx.fillStyle = '#008800'; ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.fillStyle = '#00d000'; ctx.fillRect(p.x, p.y + 4, p.width, 8);
-            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y, p.width, p.height);
-            const dir = p.pipeRole === 'enter' ? 1 : -1;
-            ctx.fillStyle = '#005800'; ctx.beginPath(); ctx.ellipse(p.x + (dir > 0 ? p.width : 0), p.y + p.height / 2, 6, p.height / 2 + 3, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(p.x + (dir > 0 ? p.width : 0), p.y + p.height / 2, 3, p.height / 2 - 1, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
-            ctx.fillText(p.pipeRole === 'enter' ? '▼' : '▲', p.x + p.width / 2, p.y - 6); ctx.textAlign = 'left';
+
+            ctx.fillStyle = '#008800'; ctx.fillRect(p.x + 24, p.y, p.width - 24, p.height);
+            ctx.fillStyle = '#00d000'; ctx.fillRect(p.x + 24, p.y + 6, p.width - 24, 14);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x + 24, p.y, p.width - 24, p.height);
+
+            ctx.fillStyle = '#008800'; ctx.fillRect(p.x, p.y - 8, 28, p.height + 16);
+            ctx.fillStyle = '#00d000'; ctx.fillRect(p.x, p.y - 8 + 5, 28, 14);
+            ctx.strokeStyle = '#000'; ctx.strokeRect(p.x, p.y - 8, 28, p.height + 16);
+
+            ctx.fillStyle = '#001c00';
+            ctx.beginPath(); ctx.ellipse(p.x + 3, p.y + p.height / 2, 5, p.height / 2 - 3, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center';
+            ctx.fillText('➜', p.x + 40, p.y + p.height / 2 + 5); ctx.textAlign = 'left';
         } else if (p.type === 'quizblock') {
             if (!p.hit) {
                 const pulse2 = 0.5 + 0.5 * Math.abs(Math.sin(Date.now() / 200));
@@ -1582,7 +1603,7 @@ function loseLife(msg) {
     player.isDead = true;
     isPaused = true;
     player.lives--;
-    player.powerState = 'small'; player.width = 36; player.height = 48; player.invincible = 0; player.starPower = 0; player.hasDoubleJump = false; player.airJumpUsed = false;
+    player.powerState = 'small'; player.width = 36; player.height = 48; player.invincible = 0; player.starPower = 0; player.hasDoubleJump = false; player.airJumpUsed = false; player.powerTimer = 0; player.doubleJumpTimer = 0;
     updateFireButtonVisibility();
     updateHeartsUI();
     try { AudioEngine.lifeLost(); } catch(e) {}
@@ -1603,7 +1624,7 @@ function loseLife(msg) {
 function fullRestart() {
     clearSave();
     resetKeys(); Music.stop(); player.lives = MAX_LIVES; player.x = 50; player.y = 50; player.vx = 0; player.vy = 0; player.isDead = false; player.levelFinished = false; flagSeq = null; isPaused = false; isStarted = false; score = 0; coinCount = 0;
-    player.powerState = 'small'; player.width = 36; player.height = 48; player.invincible = 0; player.starPower = 0; player.hasDoubleJump = false; player.airJumpUsed = false; updateFireButtonVisibility();
+    player.powerState = 'small'; player.width = 36; player.height = 48; player.invincible = 0; player.starPower = 0; player.hasDoubleJump = false; player.airJumpUsed = false; player.powerTimer = 0; player.doubleJumpTimer = 0; updateFireButtonVisibility();
     currentLevelIndex = 1; globalQIndex = 0; initQuestions(); updateScore(); updateHeartsUI(); updateCoinsUI();
     mapUnlockedLevel = 1; mapProgress = 0; mapTransitioning = false; onMap = true;
     document.getElementById('world-label').innerText = 'HARİTA';
